@@ -3,6 +3,7 @@
   "name": "Danfoss ECL 310 Modbus",
   "documentation": "",
   "dependencies": [],
+  "config_flow": true,
   "codeowners": ["@AcDcNow"],
   "requirements": ["pymodbus>=3.0.0"],
   "iot_class": "local_polling",
