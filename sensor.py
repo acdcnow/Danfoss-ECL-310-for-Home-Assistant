@@ -4,7 +4,7 @@ from pymodbus.client import ModbusTcpClient
 
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from homeassistant.const import CONF_HOST, CONF_PORT, TEMP_CELSIUS
+from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
