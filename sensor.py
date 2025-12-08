@@ -4,6 +4,7 @@ from pymodbus.client import ModbusTcpClient
 
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+# from homeassistant.const import CONF_HOST, CONF_PORT, TEMP_CELSIUS # TEMP_CELSIUS wurde entfernt
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
@@ -13,25 +14,28 @@ from .const import DOMAIN, DEFAULT_SLAVE_ID
 
 _LOGGER = logging.getLogger(__name__)
 
+# Wir definieren die Einheit nun als String "C" statt der Konstante TEMP_CELSIUS ("°C")
+UNIT_CELSIUS_SHORT = "C"
+
 # DEFINITION DER REGISTER: Ihre vollständige Liste
 DANFOSS_REGISTERS_CONFIG = {
-    "soll_temp": {"name": "ECL310_Soll_Temp", "address": 11179, "input_type": "holding", "scale": 0.1, "precision": 1, "unit": TEMP_CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "max_temp": 30, "min_temp": 10, "offset": 0, "target_temp_register": 11179, "temp_step": 0.5},
-    "absenk_temp": {"name": "ECL310_absenk_Temp", "address": 11180, "input_type": "holding", "scale": 0.1, "precision": 1, "unit": TEMP_CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "max_temp": 30, "min_temp": 10, "offset": 0, "target_temp_register": 11180, "temp_step": 0.5},
-    "s1_temp": {"name": "ECL310_S1", "address": 10200, "input_type": "input", "scale": 0.01, "precision": 1, "unit": TEMP_CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE},
-    "s2_temp": {"name": "ECL310_S2", "address": 10201, "input_type": "input", "scale": 0.01, "precision": 1, "unit": TEMP_CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE},
-    "s3_temp": {"name": "ECL310_S3", "address": 10202, "input_type": "input", "scale": 0.01, "precision": 1, "unit": TEMP_CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE},
-    "s4_temp": {"name": "ECL310_S4", "address": 10203, "input_type": "input", "scale": 0.01, "precision": 1, "unit": TEMP_CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE},
-    "s5_temp": {"name": "ECL310_S5", "address": 10204, "input_type": "input", "scale": 0.01, "precision": 1, "unit": TEMP_CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE},
-    "s6_temp": {"name": "ECL310_S6", "address": 10205, "input_type": "input", "scale": 0.01, "precision": 1, "unit": TEMP_CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE},
-    "min_outdoor_temp": {"name": "ECL310_min_Outdoor_temp", "address": 10499, "input_type": "input", "scale": 0.01, "precision": 1, "unit": TEMP_CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE},
-    "max_outdoor_temp": {"name": "ECL310_max_Outdoor_temp", "address": 10504, "input_type": "input", "scale": 0.01, "precision": 1, "unit": TEMP_CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE},
-    "normal_wasser": {"name": "ECL310_normal_wasser", "address": 12189, "input_type": "input", "scale": 0.1, "precision": 1, "unit": TEMP_CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE},
-    "absenkung_wasser": {"name": "ECL310_absenkung_wasser", "address": 12190, "input_type": "input", "scale": 0.1, "precision": 1, "unit": TEMP_CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE},
-    "vorlauf_min_temp": {"name": "ECL310_vorlauf_min_temp", "address": 11176, "input_type": "input", "scale": 1, "precision": 1, "unit": TEMP_CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE},
-    "vorlauf_max_temp": {"name": "ECL310_vorlauf_max_temp", "address": 11177, "input_type": "input", "scale": 1, "precision": 1, "unit": TEMP_CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE},
-    "komfort_soll": {"name": "ECL310_komfort_soll", "address": 11179, "input_type": "input", "scale": 0.1, "precision": 1, "unit": TEMP_CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE},
-    "absenkung_soll": {"name": "ECL310_absenkung_soll", "address": 11180, "input_type": "input", "scale": 0.1, "precision": 1, "unit": TEMP_CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE},
-    "frostschutz": {"name": "ECL310_frostschutz", "address": 12092, "input_type": "input", "scale": 1, "precision": 0, "unit": TEMP_CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE},
+    "soll_temp": {"name": "ECL310_Soll_Temp", "address": 11179, "input_type": "holding", "scale": 0.1, "precision": 1, "unit": UNIT_CELSIUS_SHORT, "device_class": SensorDeviceClass.TEMPERATURE, "max_temp": 30, "min_temp": 10, "offset": 0, "target_temp_register": 11179, "temp_step": 0.5},
+    "absenk_temp": {"name": "ECL310_absenk_Temp", "address": 11180, "input_type": "holding", "scale": 0.1, "precision": 1, "unit": UNIT_CELSIUS_SHORT, "device_class": SensorDeviceClass.TEMPERATURE, "max_temp": 30, "min_temp": 10, "offset": 0, "target_temp_register": 11180, "temp_step": 0.5},
+    "s1_temp": {"name": "ECL310_S1", "address": 10200, "input_type": "input", "scale": 0.01, "precision": 1, "unit": UNIT_CELSIUS_SHORT, "device_class": SensorDeviceClass.TEMPERATURE},
+    "s2_temp": {"name": "ECL310_S2", "address": 10201, "input_type": "input", "scale": 0.01, "precision": 1, "unit": UNIT_CELSIUS_SHORT, "device_class": SensorDeviceClass.TEMPERATURE},
+    "s3_temp": {"name": "ECL310_S3", "address": 10202, "input_type": "input", "scale": 0.01, "precision": 1, "unit": UNIT_CELSIUS_SHORT, "device_class": SensorDeviceClass.TEMPERATURE},
+    "s4_temp": {"name": "ECL310_S4", "address": 10203, "input_type": "input", "scale": 0.01, "precision": 1, "unit": UNIT_CELSIUS_SHORT, "device_class": SensorDeviceClass.TEMPERATURE},
+    "s5_temp": {"name": "ECL310_S5", "address": 10204, "input_type": "input", "scale": 0.01, "precision": 1, "unit": UNIT_CELSIUS_SHORT, "device_class": SensorDeviceClass.TEMPERATURE},
+    "s6_temp": {"name": "ECL310_S6", "address": 10205, "input_type": "input", "scale": 0.01, "precision": 1, "unit": UNIT_CELSIUS_SHORT, "device_class": SensorDeviceClass.TEMPERATURE},
+    "min_outdoor_temp": {"name": "ECL310_min_Outdoor_temp", "address": 10499, "input_type": "input", "scale": 0.01, "precision": 1, "unit": UNIT_CELSIUS_SHORT, "device_class": SensorDeviceClass.TEMPERATURE},
+    "max_outdoor_temp": {"name": "ECL310_max_Outdoor_temp", "address": 10504, "input_type": "input", "scale": 0.01, "precision": 1, "unit": UNIT_CELSIUS_SHORT, "device_class": SensorDeviceClass.TEMPERATURE},
+    "normal_wasser": {"name": "ECL310_normal_wasser", "address": 12189, "input_type": "input", "scale": 0.1, "precision": 1, "unit": UNIT_CELSIUS_SHORT, "device_class": SensorDeviceClass.TEMPERATURE},
+    "absenkung_wasser": {"name": "ECL310_absenkung_wasser", "address": 12190, "input_type": "input", "scale": 0.1, "precision": 1, "unit": UNIT_CELSIUS_SHORT, "device_class": SensorDeviceClass.TEMPERATURE},
+    "vorlauf_min_temp": {"name": "ECL310_vorlauf_min_temp", "address": 11176, "input_type": "input", "scale": 1, "precision": 1, "unit": UNIT_CELSIUS_SHORT, "device_class": SensorDeviceClass.TEMPERATURE},
+    "vorlauf_max_temp": {"name": "ECL310_vorlauf_max_temp", "address": 11177, "input_type": "input", "scale": 1, "precision": 1, "unit": UNIT_CELSIUS_SHORT, "device_class": SensorDeviceClass.TEMPERATURE},
+    "komfort_soll": {"name": "ECL310_komfort_soll", "address": 11179, "input_type": "input", "scale": 0.1, "precision": 1, "unit": UNIT_CELSIUS_SHORT, "device_class": SensorDeviceClass.TEMPERATURE},
+    "absenkung_soll": {"name": "ECL310_absenkung_soll", "address": 11180, "input_type": "input", "scale": 0.1, "precision": 1, "unit": UNIT_CELSIUS_SHORT, "device_class": SensorDeviceClass.TEMPERATURE},
+    "frostschutz": {"name": "ECL310_frostschutz", "address": 12092, "input_type": "input", "scale": 1, "precision": 0, "unit": UNIT_CELSIUS_SHORT, "device_class": SensorDeviceClass.TEMPERATURE},
     "betriebsartww": {"name": "ECL310_betriebsartww", "address": 4201, "input_type": "input"},
     "betriebsartheizung": {"name": "ECL310_betriebsartheizung", "address": 4200, "input_type": "input"},
     "pumpe_1_status": {"name": "Pumpe 1", "address": 4005, "input_type": "input"},
@@ -59,7 +63,6 @@ async def async_setup_entry(
     host = config_entry.data[CONF_HOST]
     port = config_entry.data[CONF_PORT]
     
-    # DataUpdateCoordinator ist der moderne Weg für Polling-Integrationen
     async def async_update_data():
         """Fetch data from Danfoss ECL via Modbus TCP."""
         client = ModbusTcpClient(host, port)
@@ -76,7 +79,7 @@ async def async_setup_entry(
                         client.read_input_registers, reg_config["address"], 1, slave=DEFAULT_SLAVE_ID
                     )
                 if not result.isError():
-                    raw_value = result.registers[0] # result.registers ist eine Liste
+                    raw_value = result.registers
                     scale = reg_config.get("scale", 1)
                     precision = reg_config.get("precision", 0)
                     offset = reg_config.get("offset", 0)
@@ -96,7 +99,6 @@ async def async_setup_entry(
     
     await coordinator.async_config_entry_first_refresh()
 
-    # Entitäten hinzufügen
     entities = []
     for key, reg_config in DANFOSS_REGISTERS_CONFIG.items():
         entities.append(DanfossECLSensor(coordinator, key, reg_config))
