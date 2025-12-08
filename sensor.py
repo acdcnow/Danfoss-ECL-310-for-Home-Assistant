@@ -65,7 +65,7 @@ async def async_setup_entry(
     
     async def async_update_data():
         """Fetch data from Danfoss ECL via Modbus TCP."""
-        client = ModbusTcpClient(host, port)
+        client = ModbusTcpClient(host=host, port=port)
         await hass.async_add_executor_job(client.connect)
         data = {}
         for key, reg_config in DANFOSS_REGISTERS_CONFIG.items():
