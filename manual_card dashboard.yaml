@@ -1,0 +1,60 @@
+type: vertical-stack
+cards:
+  - type: heading
+    heading: "Danfoss ECL 310 - Status"
+  
+  # Die wichtigsten Temperaturen
+  - type: glance
+    entities:
+      - entity: sensor.DEIN_NAME_s1
+        name: Außen
+      - entity: sensor.DEIN_NAME_s3
+        name: Vorlauf
+      - entity: sensor.DEIN_NAME_s4
+        name: Warmwasser
+    state_color: true
+
+  # Betriebsmodus mit farblichen Icons
+  - type: entities
+    title: Betriebsmodi
+    entities:
+      - entity: sensor.DEIN_NAME_mode_heating
+        name: Heizkreis Modus
+        icon: mdi:radiator
+        # Falls card-mod installiert ist, kannst du hier Farben setzen:
+        card_mod:
+          style: |
+            :host {
+              --paper-item-icon-color: 
+                {% if is_state('sensor.DEIN_NAME_mode_heating', 'Comfort') %} orange
+                {% elif is_state('sensor.DEIN_NAME_mode_heating', 'Constant comfort') %} red
+                {% elif is_state('sensor.DEIN_NAME_mode_heating', 'Constant setback') %} deepskyblue
+                {% else %} grey
+                {% endif %};
+            }
+      - entity: sensor.DEIN_NAME_mode_dhw
+        name: Warmwasser Modus
+        icon: mdi:water-boiler
+
+  # Pumpen und Ventile (Technik-Sektion)
+  - type: entities
+    title: Aktoren & Diagnose
+    state_color: true
+    entities:
+      - entity: sensor.DEIN_NAME_pump_1_status
+        name: Heizungspumpe
+        icon: mdi:pump
+      - entity: sensor.DEIN_NAME_m1_status
+        name: Heizungsventil
+        icon: mdi:valve
+      - entity: sensor.DEIN_NAME_manual_pumpe1
+        name: P1 Modus (Auto/Man)
+      - entity: sensor.DEIN_NAME_manual_triac_m1
+        name: M1 Modus (Auto/Man)
+
+  # Grafische Historie
+  - type: history-graph
+    entities:
+      - entity: sensor.DEIN_NAME_s1
+      - entity: sensor.DEIN_NAME_s3
+    hours_to_show: 24
