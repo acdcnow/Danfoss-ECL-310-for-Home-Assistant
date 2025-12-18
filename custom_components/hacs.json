@@ -1,0 +1,6 @@
+{
+  "name": "Danfoss ECL 310",
+  "render_readme": true,
+  "iot_class": "local_polling",
+  "type": "integration"
+}
