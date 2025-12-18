@@ -42,8 +42,14 @@
       "flow_min_temp": { "name": "Vorlauf Minimum" },
       "flow_max_temp": { "name": "Vorlauf Maximum" },
       "frost_protection": { "name": "Frostschutz-Temperatur" },
-      "mode_heating": { "name": "Betriebsart Heizkreis" },
-      "mode_dhw": { "name": "Betriebsart Warmwasser" }
+      "mode_heating": { "name": "Betriebsmodus Heizung" },
+      "mode_dhw": { "name": "WW Betriebsmodus" },
+      "pump_1_status": { "name": "Heizungspumpe" },
+      "pump_3_status": { "name": "Zirkulationspumpe" },
+      "m1_status": { "name": "Heizungsventil" },
+      "m2_status": { "name": "Wasserventil" },
+      "manual_pumpe1": { "name": "P1 Modus (Hand/Auto)" },
+      "manual_triac_m1": { "name": "M1 Modus (Hand/Auto)" }
     },
     "binary_sensor": {
       "pump_1": { "name": "Status Pumpe 1" },
