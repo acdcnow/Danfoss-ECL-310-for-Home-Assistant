@@ -1,0 +1,12 @@
+{
+  "domain": "danfoss_ecl310",
+  "name": "Danfoss ECL 310",
+  "codeowners": ["@acdcnow"],
+  "config_flow": true,
+  "documentation": "https://github.com/acdcnow/danfoss_ecl310",
+  "iot_class": "local_polling",
+  "loggers": ["custom_components.danfoss_ecl310"],
+  "after_dependencies": ["modbus"],
+  "requirements": ["pymodbus>=3.8.2"],
+  "version": "2.2.0"
+}
