@@ -1,1 +1,64 @@
-
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Danfoss ECL 310 Einrichtung",
+        "description": "Gib die Verbindungsdaten für deine Heizungssteuerung ein.",
+        "data": {
+          "host": "IP-Adresse",
+          "port": "Port (Standard 502)",
+          "slave_id": "Modbus Slave ID (ECL Standard 254)",
+          "scan_interval": "Abfrageintervall (Sekunden)",
+          "name": "Anzeigename der Heizung"
+        }
+      },
+      "reconfigure": {
+        "title": "Konfiguration anpassen",
+        "data": {
+          "host": "IP-Adresse",
+          "port": "Port",
+          "slave_id": "Slave ID",
+          "scan_interval": "Abfrageintervall"
+        }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "comfort_temp": { "name": "Komforttemperatur" },
+      "setback_temp": { "name": "Absenktemperatur" }
+    },
+    "sensor": {
+      "s1": { "name": "Außentemperatur (S1)" },
+      "s2": { "name": "Raumtemperatur (S2)" },
+      "s3": { "name": "Vorlauftemperatur (S3)" },
+      "s4": { "name": "Warmwassertemperatur (S4)" },
+      "s5": { "name": "Rücklauftemperatur (S5)" },
+      "s6": { "name": "Zusatztemperatur (S6)" },
+      "min_outdoor_temp": { "name": "Min. Außentemperatur (24h)" },
+      "max_outdoor_temp": { "name": "Max. Außentemperatur (24h)" },
+      "normal_water": { "name": "Warmwasser Soll (Normal)" },
+      "setback_water": { "name": "Warmwasser Soll (Absenkung)" },
+      "flow_min_temp": { "name": "Vorlauf Minimum" },
+      "flow_max_temp": { "name": "Vorlauf Maximum" },
+      "frost_protection": { "name": "Frostschutz-Temperatur" },
+      "mode_heating": { "name": "Betriebsart Heizkreis" },
+      "mode_dhw": { "name": "Betriebsart Warmwasser" }
+    },
+    "binary_sensor": {
+      "pump_1": { "name": "Status Pumpe 1" },
+      "pump_2": { "name": "Status Pumpe 2" },
+      "pump_3": { "name": "Status Pumpe 3" },
+      "m1_opening": { "name": "Mischer 1 öffnet" },
+      "m1_closing": { "name": "Mischer 1 schließt" },
+      "m2_opening": { "name": "Mischer 2 öffnet" },
+      "m2_closing": { "name": "Mischer 2 schließt" },
+      "manual_triac_m1": { "name": "Handbetrieb Triac M1" },
+      "manual_triac_m2": { "name": "Handbetrieb Triac M2" },
+      "manual_triac_m3": { "name": "Handbetrieb Triac M3" },
+      "manual_pump_1": { "name": "Handbetrieb Pumpe 1" },
+      "manual_pump_2": { "name": "Handbetrieb Pumpe 2" },
+      "manual_pump_3": { "name": "Handbetrieb Pumpe 3" }
+    }
+  }
+}
