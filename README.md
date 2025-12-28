@@ -1,5 +1,3 @@
----
-
 # Danfoss ECL310 for Home Assistant
 
 This is a custom integration for **Home Assistant** to monitor and control **Danfoss ECL310** district heating controllers via **Modbus TCP**.
