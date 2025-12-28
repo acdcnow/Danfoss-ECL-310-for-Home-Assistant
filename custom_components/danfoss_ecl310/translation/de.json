@@ -2,69 +2,61 @@
   "config": {
     "step": {
       "user": {
-        "title": "Danfoss ECL 310 Einrichtung",
-        "description": "Gib die Verbindungsdaten für deine Heizungssteuerung ein.",
+        "title": "Verbinde mit Danfoss ECL310",
         "data": {
-          "host": "IP-Adresse",
-          "port": "Port (Standard 502)",
-          "slave_id": "Modbus Slave ID (ECL Standard 254)",
-          "scan_interval": "Abfrageintervall (Sekunden)",
-          "name": "Anzeigename der Heizung"
-        }
-      },
-      "reconfigure": {
-        "title": "Konfiguration anpassen",
-        "data": {
-          "host": "IP-Adresse",
-          "port": "Port",
-          "slave_id": "Slave ID",
-          "scan_interval": "Abfrageintervall"
+          "host": "IP Adresse",
+          "port": "Port"
         }
       }
+    },
+    "error": {
+      "cannot_connect": "Verbindung fehlgeschlagen. Bitte IP und Port prüfen.",
+      "unknown": "Unerwarteter Fehler"
+    },
+    "abort": {
+      "already_configured": "Gerät ist bereits konfiguriert"
     }
   },
   "entity": {
-    "climate": {
-      "comfort_temp": { "name": "Komforttemperatur" },
-      "setback_temp": { "name": "Absenktemperatur" }
-    },
     "sensor": {
-      "s1": { "name": "Außentemperatur (S1)" },
-      "s2": { "name": "Raumtemperatur (S2)" },
-      "s3": { "name": "Vorlauftemperatur (S3)" },
-      "s4": { "name": "Warmwassertemperatur (S4)" },
-      "s5": { "name": "Rücklauftemperatur (S5)" },
-      "s6": { "name": "Zusatztemperatur (S6)" },
-      "min_outdoor_temp": { "name": "Min. Außentemperatur (24h)" },
-      "max_outdoor_temp": { "name": "Max. Außentemperatur (24h)" },
-      "normal_water": { "name": "Warmwasser Soll (Normal)" },
-      "setback_water": { "name": "Warmwasser Soll (Absenkung)" },
-      "flow_min_temp": { "name": "Vorlauf Minimum" },
-      "flow_max_temp": { "name": "Vorlauf Maximum" },
-      "frost_protection": { "name": "Frostschutz-Temperatur" },
-      "mode_heating": { "name": "Betriebsmodus Heizung" },
-      "mode_dhw": { "name": "WW Betriebsmodus" },
-      "pump_1_status": { "name": "Heizungspumpe" },
-      "pump_3_status": { "name": "Zirkulationspumpe" },
-      "m1_status": { "name": "Heizungsventil" },
-      "m2_status": { "name": "Wasserventil" },
-      "manual_pumpe1": { "name": "P1 Modus (Hand/Auto)" },
-      "manual_triac_m1": { "name": "M1 Modus (Hand/Auto)" }
-    },
-    "binary_sensor": {
-      "pump_1": { "name": "Status Pumpe 1" },
-      "pump_2": { "name": "Status Pumpe 2" },
-      "pump_3": { "name": "Status Pumpe 3" },
-      "m1_opening": { "name": "Mischer 1 öffnet" },
-      "m1_closing": { "name": "Mischer 1 schließt" },
-      "m2_opening": { "name": "Mischer 2 öffnet" },
-      "m2_closing": { "name": "Mischer 2 schließt" },
-      "manual_triac_m1": { "name": "Handbetrieb Triac M1" },
-      "manual_triac_m2": { "name": "Handbetrieb Triac M2" },
-      "manual_triac_m3": { "name": "Handbetrieb Triac M3" },
-      "manual_pump_1": { "name": "Handbetrieb Pumpe 1" },
-      "manual_pump_2": { "name": "Handbetrieb Pumpe 2" },
-      "manual_pump_3": { "name": "Handbetrieb Pumpe 3" }
+      "simple_on_off": {
+        "state": {
+          "0": "Aus",
+          "1": "Ein"
+        }
+      },
+      "operating_mode": {
+        "state": {
+          "0": "Manuell",
+          "1": "Zeitplan",
+          "2": "Komfort",
+          "3": "Konstant Reduziert",
+          "4": "Konstant Komfort",
+          "failed": "Fehler"
+        }
+      },
+      "pump_mode": {
+        "state": {
+          "0": "AUTO",
+          "1": "AUS",
+          "2": "EIN"
+        }
+      },
+      "valve_manual_mode": {
+        "state": {
+          "0": "AUTO",
+          "1": "STOP",
+          "2": "SCHLIEẞEN",
+          "3": "ÖFFNEN"
+        }
+      },
+      "movement_state": {
+        "state": {
+          "opening": "Öffnen",
+          "closing": "Schließen",
+          "stop": "Stop"
+        }
+      }
     }
   }
 }
