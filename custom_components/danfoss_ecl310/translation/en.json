@@ -2,47 +2,61 @@
   "config": {
     "step": {
       "user": {
-        "title": "ECL 310 Setup",
+        "title": "Connect to Danfoss ECL310",
         "data": {
           "host": "IP Address",
-          "port": "Port",
-          "slave_id": "Slave ID",
-          "scan_interval": "Scan Interval (s)",
-          "name": "Device Name"
+          "port": "Port"
         }
       }
+    },
+    "error": {
+      "cannot_connect": "Connection failed. Please check IP and Port.",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "Device is already configured"
     }
   },
   "entity": {
-    "climate": {
-      "comfort_temp": { "name": "Comfort Temperature" },
-      "setback_temp": { "name": "Setback Temperature" }
-    },
     "sensor": {
-      "s1": { "name": "Outdoor Temp (S1)" },
-      "s2": { "name": "Room Temp (S2)" },
-      "s3": { "name": "Flow Temp (S3)" },
-      "s4": { "name": "DHW Temp (S4)" },
-      "s5": { "name": "Return Temp (S5)" },
-      "s6": { "name": "Additional Temp (S6)" },
-      "min_outdoor_temp": { "name": "Min Outdoor Temp" },
-      "max_outdoor_temp": { "name": "Max Outdoor Temp" },
-      "normal_water": { "name": "DHW Setpoint Normal" },
-      "setback_water": { "name": "DHW Setpoint Setback" },
-      "flow_min_temp": { "name": "Flow Minimum" },
-      "flow_max_temp": { "name": "Flow Maximum" },
-      "frost_protection": { "name": "Frost Protection" },
-      "mode_heating": { "name": "Heating Mode" },
-      "mode_dhw": { "name": "DHW Mode" }
-    },
-    "binary_sensor": {
-      "pump_1": { "name": "Pump 1" },
-      "pump_2": { "name": "Pump 2" },
-      "pump_3": { "name": "Pump 3" },
-      "m1_opening": { "name": "Mixer 1 Opening" },
-      "m1_closing": { "name": "Mixer 1 Closing" },
-      "manual_triac_m1": { "name": "Manual Mode Mixer" },
-      "manual_pump_1": { "name": "Manual Mode Pump" }
+      "simple_on_off": {
+        "state": {
+          "0": "Off",
+          "1": "On"
+        }
+      },
+      "operating_mode": {
+        "state": {
+          "0": "Manual",
+          "1": "Schedule",
+          "2": "Comfort",
+          "3": "Constant Setback",
+          "4": "Constant Comfort",
+          "failed": "Failed"
+        }
+      },
+      "pump_mode": {
+        "state": {
+          "0": "AUTO",
+          "1": "OFF",
+          "2": "ON"
+        }
+      },
+      "valve_manual_mode": {
+        "state": {
+          "0": "AUTO",
+          "1": "STOP",
+          "2": "CLOSING",
+          "3": "OPENING"
+        }
+      },
+      "movement_state": {
+        "state": {
+          "opening": "Opening",
+          "closing": "Closing",
+          "stop": "Stopped"
+        }
+      }
     }
   }
 }
