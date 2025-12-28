@@ -1,5 +1,3 @@
-Here is a comprehensive `README.md` file for your GitHub repository. It covers installation, usage, technical details, and customization instructions.
-
 ---
 
 # Danfoss ECL310 for Home Assistant
