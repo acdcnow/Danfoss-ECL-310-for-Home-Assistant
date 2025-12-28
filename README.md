@@ -138,7 +138,7 @@ logger:
 
 The integration is currently translated into:
 
-* 🇺🇸 English (Default)
+* en English (Default)
 * 🇩🇪 German
 * 🇫🇷 French
 * 🇮🇹 Italian
