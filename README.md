@@ -146,7 +146,3 @@ The integration is currently translated into:
 * 🇪🇸 Spanish
 
 The language is automatically selected based on your Home Assistant user profile settings.
-
-## License
-
-MIT License
