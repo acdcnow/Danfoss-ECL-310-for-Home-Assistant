@@ -1,8 +1,9 @@
 {
   "name": "Danfoss ECL 310",
   "content_in_root": false,
+  "zip_release": false,
   "render_readme": true,
+  "homeassistant": "2025.12.4",
   "iot_class": "local_polling",
-  "type": "integration",
-  "homeassistant": "2025.12.4"
+  "type": "integration"
 }
