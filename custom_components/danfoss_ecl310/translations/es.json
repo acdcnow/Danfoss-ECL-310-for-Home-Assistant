@@ -1,0 +1,62 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Danfoss ECL310",
+        "data": {
+          "host": "IP Address",
+          "port": "Port"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Connection failed. Please check IP and Port.",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "Device is already configured"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "simple_on_off": {
+        "state": {
+          "0": "Off",
+          "1": "On"
+        }
+      },
+      "operating_mode": {
+        "state": {
+          "0": "Manual",
+          "1": "Schedule",
+          "2": "Comfort",
+          "3": "Constant Setback",
+          "4": "Constant Comfort",
+          "failed": "Failed"
+        }
+      },
+      "pump_mode": {
+        "state": {
+          "0": "AUTO",
+          "1": "OFF",
+          "2": "ON"
+        }
+      },
+      "valve_manual_mode": {
+        "state": {
+          "0": "AUTO",
+          "1": "STOP",
+          "2": "CLOSING",
+          "3": "OPENING"
+        }
+      },
+      "movement_state": {
+        "state": {
+          "opening": "Opening",
+          "closing": "Closing",
+          "stop": "Stopped"
+        }
+      }
+    }
+  }
+}
