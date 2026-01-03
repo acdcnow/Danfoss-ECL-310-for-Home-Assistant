@@ -1,5 +1,9 @@
 # Danfoss ECL310 for Home Assistant
 
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
+[![Maintainer](https://img.shields.io/badge/maintainer-acdcnow-blue)](https://github.com/acdcnow)
+[![Version](https://img.shields.io/badge/version-1.0.6-green)]()
+
 This is a custom integration for **Home Assistant** to monitor and control **Danfoss ECL310** district heating controllers via **Modbus TCP**.
 Using Application 247.1 (V01)
 
