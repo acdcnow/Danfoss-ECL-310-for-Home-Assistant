@@ -15,16 +15,14 @@ DATA_SCHEMA = vol.Schema({
 })
 
 async def validate_input(hass: HomeAssistant, data: dict) -> dict:
-    """Validiert die Eingaben."""
-    # Import lokal, um Zirkelbezüge/Ladefehler zu vermeiden
+    """Validiert die Eingaben und testet die Verbindung."""
     from .modbus_client import DanfossModbusHub
     
     hub = DanfossModbusHub(data[CONF_HOST], data[CONF_PORT])
     
     try:
         await hub.connect()
-        # Test-Register lesen (Slave 254)
-        # Wir nutzen hier 4200 (Betriebsart Heizung) als Test
+        # Test-Register lesen (Slave 254), z.B. 4200 (Betriebsart)
         test_val = await hub.read_register(4200, slave_id=254, input_type="input")
         
         if test_val is None:
@@ -34,31 +32,47 @@ async def validate_input(hass: HomeAssistant, data: dict) -> dict:
         _LOGGER.error(f"Verbindungsfehler im Config Flow: {e}")
         raise ConnectionError
     finally:
-        # WICHTIG: Hier stand vorher 'await hub.close()'.
-        # Da close() jetzt synchron ist, muss das 'await' weg!
         hub.close()
 
-    return {"title": f"Danfoss ECL310 ({data[CONF_HOST]})"}
+    return {"title": data.get("name", f"ECL 310 ({data[CONF_HOST]})")}
 
 class DanfossConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     async def async_step_user(self, user_input=None) -> FlowResult:
         errors = {}
+        
+        # 1. Berechne Vorschlag für den Namen (ECL 1, ECL 2 ...)
+        current_entries = self._async_current_entries()
+        count = len(current_entries) + 1
+        default_name = f"ECL {count}"
+
         if user_input is not None:
             # Prüfen ob IP schon existiert
             await self.async_set_unique_id(user_input[CONF_HOST])
             self._abort_if_unique_id_configured()
 
             try:
-                info = await validate_input(self.hass, user_input)
-                return self.async_create_entry(title=info["title"], data=user_input)
+                await validate_input(self.hass, user_input)
+                
+                # WICHTIG: Den vom User gewählten Namen als Titel setzen
+                return self.async_create_entry(
+                    title=user_input.get("name", default_name), 
+                    data=user_input
+                )
             except ConnectionError:
                 errors["base"] = "cannot_connect"
             except Exception as e:
                 _LOGGER.exception("Unerwarteter Fehler")
                 errors["base"] = "unknown"
 
+        # Schema mit Namens-Feld erweitern
+        schema = vol.Schema({
+            vol.Required(CONF_HOST): str,
+            vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
+            vol.Optional("name", default=default_name): str,
+        })
+
         return self.async_show_form(
-            step_id="user", data_schema=DATA_SCHEMA, errors=errors
+            step_id="user", data_schema=schema, errors=errors
         )

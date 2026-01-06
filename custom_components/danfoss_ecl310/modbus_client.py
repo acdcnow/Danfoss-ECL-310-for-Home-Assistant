@@ -9,66 +9,64 @@ class DanfossModbusHub:
         self._host = host
         self._port = port
         self._client = AsyncModbusTcpClient(host=host, port=port)
-        _LOGGER.debug(f"DanfossModbusHub initialized: {host}:{port}")
+        _LOGGER.info(f"DanfossModbusHub initialized (Async): {host}:{port}")
 
     async def connect(self):
+        """Connect to the Modbus device."""
         if not self._client.connected:
             await self._client.connect()
 
     def close(self):
-        """Closes the connection (Synchronous in newer Pymodbus versions)."""
+        """Closes the connection."""
         if self._client.connected:
             self._client.close()
             _LOGGER.debug("Modbus connection closed.")
 
     async def _execute_read(self, func, address, count, slave_id):
         """
-        Attempts to call the read function robustly.
-        Common error: 'count' must often be passed as a keyword argument.
+        Versucht robust zu lesen. Probiert nacheinander slave, unit und ohne ID.
         """
-        # Strategy 1: Modern (Pymodbus v3.x) -> count and slave as keywords
+        # Versuch 1: Modern (Pymodbus v3.x) -> slave als Keyword
         try:
             return await func(address, count=count, slave=slave_id)
         except TypeError:
             pass
 
-        # Strategy 2: Legacy (Pymodbus v2.x) -> count and unit as keywords
+        # Versuch 2: Legacy (Pymodbus v2.x) -> unit als Keyword
         try:
             return await func(address, count=count, unit=slave_id)
         except TypeError:
             pass
 
-        # Strategy 3: Without Slave-ID (uses Client default, usually 1 or 0)
-        # Helps if the library completely rejects slave/unit arguments.
+        # Versuch 3: Ohne ID (Fallback)
         try:
             return await func(address, count=count)
         except Exception as e:
-            # If everything fails, raise the error
-            _LOGGER.error(f"All read methods failed for Addr {address}: {e}")
+            # Wenn alles fehlschlägt, Fehler werfen
             raise e
 
     async def read_register(self, address, slave_id, input_type="holding"):
+        """Liest ein Register aus."""
         if not self._client.connected:
             await self.connect()
             
         try:
-            # _LOGGER.debug(f"READ REQ -> Addr: {address} | Slave: {slave_id} | Type: {input_type}")
-            
             if input_type == "input":
-                # read_input_registers(address, count=1, ...)
                 result = await self._execute_read(self._client.read_input_registers, address, 1, slave_id)
             else:
-                # read_holding_registers(address, count=1, ...)
                 result = await self._execute_read(self._client.read_holding_registers, address, 1, slave_id)
             
             if result.isError():
-                _LOGGER.error(f"READ ERR -> Addr: {address} | Error: {result}")
+                _LOGGER.debug(f"Read Error on {address}: {result}")
                 return None
             
+            # Prüfen ob Daten da sind
             if hasattr(result, 'registers') and len(result.registers) > 0:
                 raw_val = result.registers[0]
                 final_val = raw_val
-                # Handle signed Int16
+                
+                # Vorzeichen behandeln (Signed 16-bit)
+                # Alles über 32767 ist negativ (z.B. 65530 -> -6)
                 if raw_val > 32767:
                     final_val = raw_val - 65536
                 return final_val
@@ -76,32 +74,37 @@ class DanfossModbusHub:
                 return None
                 
         except Exception as e:
-            _LOGGER.error(f"READ CRITICAL -> Addr: {address} | {e}")
+            _LOGGER.error(f"Read Exception on {address}: {e}")
             return None
 
     async def write_register(self, address, value, slave_id):
+        """Schreibt ein Register."""
         if not self._client.connected:
             await self.connect()
 
         try:
             value = int(value)
-            _LOGGER.debug(f"WRITE REQ -> Addr: {address} | Val: {value}")
             
-            # Use robust logic for writing as well
+            # Negative Werte umrechnen für Modbus (z.B. -10 -> 65526)
+            if value < 0:
+                value = value + 65536
+            
+            # Auch beim Schreiben nutzen wir die robuste Logik
             try:
                 result = await self._client.write_register(address, value, slave=slave_id)
             except TypeError:
                 try:
                     result = await self._client.write_register(address, value, unit=slave_id)
                 except TypeError:
-                    # Fallback without Slave ID
                     result = await self._client.write_register(address, value)
             
             if result.isError():
-                _LOGGER.error(f"WRITE ERR -> Addr: {address} | Result: {result}")
+                _LOGGER.error(f"Write Error on {address}: {result}")
                 return False
+            
+            _LOGGER.info(f"Write Success: {address} = {value}")
             return True
             
         except Exception as e:
-            _LOGGER.error(f"WRITE EXCEPTION -> Addr: {address} | Error: {e}")
+            _LOGGER.error(f"Write Exception on {address}: {e}")
             return False

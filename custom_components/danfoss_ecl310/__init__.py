@@ -5,9 +5,8 @@ from datetime import timedelta
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.const import CONF_HOST, CONF_PORT
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-# Import constants and lists from const.py
 from .const import (
     DOMAIN,
     SENSORS_60S,
@@ -15,12 +14,16 @@ from .const import (
     SENSORS_600S,
     CLIMATE_ENTITIES,
     DEFAULT_SLAVE,
+    # New Constants
+    DEFAULT_INTERVAL_FAST,
+    DEFAULT_INTERVAL_TEMP,
+    DEFAULT_INTERVAL_SLOW,
 )
 from .modbus_client import DanfossModbusHub
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["sensor", "climate"]
+PLATFORMS = ["sensor", "number"]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Sets up the integration."""
@@ -29,16 +32,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     _LOGGER.debug(f"Setup Danfoss ECL310 integration for {host}:{port}")
 
-    # Initialize and connect Hub
     hub = DanfossModbusHub(host, port)
     await hub.connect()
 
-    # ------------------------------------------------------------------
-    # Helper function for Coordinators
-    # ------------------------------------------------------------------
     async def create_coordinator(interval, sensors, name_suffix):
         async def async_update_data():
-            """Data fetch logic."""
             data = {}
             
             # 1. Read standard sensors
@@ -50,76 +48,65 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 )
                 data[sens["key"]] = val
 
-            # 2. Read Climate (Thermostat) data
-            # We read climate data with every 30-second cycle (interval 30),
-            # so thermostats in HA are responsive.
-            if interval == 30: 
-                for clim in CLIMATE_ENTITIES:
-                    # Climate usually uses Holding Registers for reading
+            # 2. Read Number Entities (Target Temps) only on fast loop
+            # We assume the fast loop (default 30s) handles responsiveness
+            if interval == DEFAULT_INTERVAL_FAST: 
+                # Import NUMBER_ENTITIES locally to avoid circular imports if any
+                from .const import NUMBER_ENTITIES
+                for num in NUMBER_ENTITIES:
                     val = await hub.read_register(
-                        clim["address"], 
-                        clim["slave"], 
+                        num["address"], 
+                        num["slave"], 
                         input_type="holding"
                     )
-                    data[f"climate_{clim['address']}"] = val
+                    data[num["key"]] = val
 
             return data
 
-        # Create Coordinator
         coordinator = DataUpdateCoordinator(
             hass,
             _LOGGER,
             name=f"danfoss_ecl310_{name_suffix}",
             update_method=async_update_data,
+            # Start with default interval
             update_interval=timedelta(seconds=interval),
         )
 
-        # First refresh immediately
         await coordinator.async_config_entry_first_refresh()
         return coordinator
 
-    # ------------------------------------------------------------------
-    # Create Coordinators (Intervals defined here)
-    # ------------------------------------------------------------------
+    # Create Coordinators using the constants
     
-    # Group 1 (Status): 30 seconds
-    _LOGGER.info("Creating coordinator for Status (30s)...")
-    coord_60 = await create_coordinator(30, SENSORS_60S, "fast_30s")
+    # Group 1 (Status): Default 30s
+    _LOGGER.info(f"Creating coordinator for Status ({DEFAULT_INTERVAL_FAST}s default)...")
+    coord_60 = await create_coordinator(DEFAULT_INTERVAL_FAST, SENSORS_60S, "fast_30s")
     
-    # Group 2 (Temperatures): 30 seconds
-    _LOGGER.info("Creating coordinator for Temperatures (30s)...")
-    coord_300 = await create_coordinator(30, SENSORS_300S, "temp_30s")
+    # Group 2 (Temperatures): Default 30s
+    _LOGGER.info(f"Creating coordinator for Temperatures ({DEFAULT_INTERVAL_TEMP}s default)...")
+    coord_300 = await create_coordinator(DEFAULT_INTERVAL_TEMP, SENSORS_300S, "temp_30s")
     
-    # Group 3 (Settings/Limits): 600 seconds
-    # These change rarely, so we reduce bus load here.
-    _LOGGER.info("Creating coordinator for Settings (600s)...")
-    coord_600 = await create_coordinator(600, SENSORS_600S, "settings_600s")
+    # Group 3 (Settings/Limits): Default 600s
+    _LOGGER.info(f"Creating coordinator for Settings ({DEFAULT_INTERVAL_SLOW}s default)...")
+    coord_600 = await create_coordinator(DEFAULT_INTERVAL_SLOW, SENSORS_600S, "settings_600s")
 
-    # ------------------------------------------------------------------
-    # Store in hass.data
-    # ------------------------------------------------------------------
     hass.data.setdefault(DOMAIN, {})
+    # Store keys exactly as expected by number.py
     hass.data[DOMAIN][entry.entry_id] = {
         "hub": hub,
-        # Keep internal keys so sensor.py can find them
         "coord_60": coord_60,
         "coord_300": coord_300,
         "coord_600": coord_600
     }
 
-    # Load platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Removes the integration (On Delete or Reload)."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     
     if unload_ok:
         data = hass.data[DOMAIN].pop(entry.entry_id)
-        
-        # IMPORTANT: No 'await' here, as close() is now synchronous.
         data["hub"].close()
         
     return unload_ok
