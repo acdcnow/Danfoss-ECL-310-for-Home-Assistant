@@ -1,60 +1,62 @@
 {
   "config": {
-    "step": {
-      "user": {
-        "title": "Connexion au Danfoss ECL310",
-        "data": {
-          "host": "Adresse IP",
-          "port": "Port"
-        }
-      }
+    "abort": {
+      "already_configured": "L'appareil est déjà configuré",
+      "cannot_connect": "Échec de la connexion"
     },
     "error": {
-      "cannot_connect": "Échec de la connexion. Veuillez vérifier l'IP et le port.",
+      "cannot_connect": "Échec de la connexion",
       "unknown": "Erreur inattendue"
     },
-    "abort": {
-      "already_configured": "L'appareil est déjà configuré"
+    "step": {
+      "user": {
+        "data": {
+          "host": "Adresse IP",
+          "port": "Port",
+          "name": "Nom (ex. ECL 1)"
+        },
+        "description": "Connectez-vous à votre contrôleur Danfoss ECL 310 via Modbus TCP."
+      }
     }
   },
   "entity": {
     "sensor": {
+      "operating_mode": {
+        "state": {
+          "0": "Veille",
+          "1": "Programme",
+          "2": "Confort",
+          "3": "Réduit",
+          "4": "Hors gel",
+          "5": "Manuel"
+        }
+      },
       "simple_on_off": {
         "state": {
           "0": "Arrêt",
           "1": "Marche"
         }
       },
-      "operating_mode": {
-        "state": {
-          "0": "Manuel",
-          "1": "Programme",
-          "2": "Confort",
-          "3": "Réduit constant",
-          "4": "Confort constant",
-          "failed": "Échec"
-        }
-      },
-      "pump_mode": {
-        "state": {
-          "0": "AUTO",
-          "1": "ARRÊT",
-          "2": "MARCHE"
-        }
-      },
-      "valve_manual_mode": {
-        "state": {
-          "0": "AUTO",
-          "1": "STOP",
-          "2": "FERMETURE",
-          "3": "OUVERTURE"
-        }
-      },
       "movement_state": {
         "state": {
           "opening": "Ouverture",
           "closing": "Fermeture",
-          "stop": "Arrêt"
+          "stop": "Stop"
+        }
+      },
+      "pump_mode": {
+        "state": {
+          "0": "Auto",
+          "1": "Marche Manuelle",
+          "2": "Arrêt Manuel"
+        }
+      },
+      "valve_manual_mode": {
+        "state": {
+          "0": "Auto",
+          "1": "Stop",
+          "2": "Fermeture",
+          "3": "Ouverture"
         }
       }
     }

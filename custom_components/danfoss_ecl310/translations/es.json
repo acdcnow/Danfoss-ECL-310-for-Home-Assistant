@@ -1,60 +1,62 @@
 {
   "config": {
-    "step": {
-      "user": {
-        "title": "Conectar a Danfoss ECL310",
-        "data": {
-          "host": "Dirección IP",
-          "port": "Puerto"
-        }
-      }
+    "abort": {
+      "already_configured": "El dispositivo ya está configurado",
+      "cannot_connect": "Fallo de conexión"
     },
     "error": {
-      "cannot_connect": "Conexión fallida. Verifique IP y Puerto.",
+      "cannot_connect": "Fallo de conexión",
       "unknown": "Error inesperado"
     },
-    "abort": {
-      "already_configured": "El dispositivo ya está configurado"
+    "step": {
+      "user": {
+        "data": {
+          "host": "Dirección IP",
+          "port": "Puerto",
+          "name": "Nombre (ej. ECL 1)"
+        },
+        "description": "Conéctese a su controlador Danfoss ECL 310 vía Modbus TCP."
+      }
     }
   },
   "entity": {
     "sensor": {
+      "operating_mode": {
+        "state": {
+          "0": "Espera",
+          "1": "Programa",
+          "2": "Confort",
+          "3": "Reducido",
+          "4": "Protección contra heladas",
+          "5": "Manual"
+        }
+      },
       "simple_on_off": {
         "state": {
           "0": "Apagado",
           "1": "Encendido"
         }
       },
-      "operating_mode": {
-        "state": {
-          "0": "Manual",
-          "1": "Programa",
-          "2": "Confort",
-          "3": "Reducido constante",
-          "4": "Confort constante",
-          "failed": "Fallido"
-        }
-      },
-      "pump_mode": {
-        "state": {
-          "0": "AUTO",
-          "1": "APAGADO",
-          "2": "ENCENDIDO"
-        }
-      },
-      "valve_manual_mode": {
-        "state": {
-          "0": "AUTO",
-          "1": "PARADA",
-          "2": "CERRANDO",
-          "3": "ABRIENDO"
-        }
-      },
       "movement_state": {
         "state": {
           "opening": "Abriendo",
           "closing": "Cerrando",
-          "stop": "Parado"
+          "stop": "Stop"
+        }
+      },
+      "pump_mode": {
+        "state": {
+          "0": "Auto",
+          "1": "Encendido Manual",
+          "2": "Apagado Manual"
+        }
+      },
+      "valve_manual_mode": {
+        "state": {
+          "0": "Auto",
+          "1": "Stop",
+          "2": "Cerrando",
+          "3": "Abriendo"
         }
       }
     }

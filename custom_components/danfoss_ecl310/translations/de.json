@@ -1,60 +1,62 @@
 {
   "config": {
-    "step": {
-      "user": {
-        "title": "Verbinde mit Danfoss ECL310",
-        "data": {
-          "host": "IP Adresse",
-          "port": "Port"
-        }
-      }
+    "abort": {
+      "already_configured": "Gerät ist bereits konfiguriert",
+      "cannot_connect": "Verbindung fehlgeschlagen"
     },
     "error": {
-      "cannot_connect": "Verbindung fehlgeschlagen. Bitte IP und Port prüfen.",
+      "cannot_connect": "Verbindung fehlgeschlagen",
       "unknown": "Unerwarteter Fehler"
     },
-    "abort": {
-      "already_configured": "Gerät ist bereits konfiguriert"
+    "step": {
+      "user": {
+        "data": {
+          "host": "IP Adresse",
+          "port": "Port",
+          "name": "Name (z.B. ECL 1)"
+        },
+        "description": "Verbinde dich mit deinem Danfoss ECL 310 Controller via Modbus TCP."
+      }
     }
   },
   "entity": {
     "sensor": {
+      "operating_mode": {
+        "state": {
+          "0": "Standby",
+          "1": "Zeitplan",
+          "2": "Komfort",
+          "3": "Absenkung",
+          "4": "Frostschutz",
+          "5": "Manuell"
+        }
+      },
       "simple_on_off": {
         "state": {
           "0": "Aus",
           "1": "Ein"
         }
       },
-      "operating_mode": {
+      "movement_state": {
         "state": {
-          "0": "Manuell",
-          "1": "Zeitplan",
-          "2": "Komfort",
-          "3": "Konstant Reduziert",
-          "4": "Konstant Komfort",
-          "failed": "Fehler"
+          "opening": "Öffnet",
+          "closing": "Schließt",
+          "stop": "Stop"
         }
       },
       "pump_mode": {
         "state": {
-          "0": "AUTO",
-          "1": "AUS",
-          "2": "EIN"
+          "0": "Auto",
+          "1": "Manuell Ein",
+          "2": "Manuell Aus"
         }
       },
       "valve_manual_mode": {
         "state": {
-          "0": "AUTO",
-          "1": "STOP",
-          "2": "SCHLIEẞEN",
-          "3": "ÖFFNEN"
-        }
-      },
-      "movement_state": {
-        "state": {
-          "opening": "Öffnen",
-          "closing": "Schließen",
-          "stop": "Stop"
+          "0": "Auto",
+          "1": "Stop",
+          "2": "Schließen",
+          "3": "Öffnen"
         }
       }
     }
