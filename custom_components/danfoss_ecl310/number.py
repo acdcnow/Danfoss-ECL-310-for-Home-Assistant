@@ -53,6 +53,9 @@ class DanfossNumber(CoordinatorEntity, NumberEntity):
         self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
         
         self._data_key = config["key"]
+        
+        # FIX: Load scale from config, default to 0.1 (old behavior for temp targets)
+        self._scale = config.get("scale", 0.1)
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -68,10 +71,12 @@ class DanfossNumber(CoordinatorEntity, NumberEntity):
         val = self.coordinator.data.get(self._data_key)
         if val is None:
             return None
-        return float(val) / 10.0
+        # FIX: Use dynamic scaling instead of hardcoded / 10.0
+        return float(val) * self._scale
 
     async def async_set_native_value(self, value: float) -> None:
-        val_to_write = int(value * 10)
+        # FIX: Inverse scaling for writing
+        val_to_write = int(value / self._scale)
         
         success = await self._hub.write_register(
             self._address, 
