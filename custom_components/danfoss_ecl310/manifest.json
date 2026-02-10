@@ -1,7 +1,7 @@
 {
   "domain": "danfoss_ecl310",
   "name": "Danfoss ECL 310",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "documentation": "https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant",
   "issue_tracker": "https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/issues",
   "requirements": [
