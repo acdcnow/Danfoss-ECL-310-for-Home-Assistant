@@ -81,17 +81,18 @@ SENSORS_600S = [
 # Modbus Settings (NUMBER ENTITIES / SLIDERS)
 # Prefix "Set:" or "Curve:"
 NUMBER_ENTITIES = [
-    {"name": "Set: Target Comfort", "key": "conf_target_comfort", "address": 11179, "slave": DEFAULT_SLAVE, "min": 10, "max": 30, "step": 0.5, "icon": "mdi:thermometer-check"},
-    {"name": "Set: Target Setback", "key": "conf_target_setback", "address": 11180, "slave": DEFAULT_SLAVE, "min": 10, "max": 30, "step": 0.5, "icon": "mdi:thermometer-low"},
-    {"name": "Curve: Slope", "key": "heat_curve_slope", "address": 11174, "slave": DEFAULT_SLAVE, "min": 0.1, "max": 1.0, "step": 0.1, "icon": "mdi:chart-line"},
+    {"name": "Set: Target Comfort", "key": "conf_target_comfort", "address": 11179, "slave": DEFAULT_SLAVE, "min": 10, "max": 30, "step": 0.5, "icon": "mdi:thermometer-check", "scale": 0.1},
+    {"name": "Set: Target Setback", "key": "conf_target_setback", "address": 11180, "slave": DEFAULT_SLAVE, "min": 10, "max": 30, "step": 0.5, "icon": "mdi:thermometer-low", "scale": 0.1},
+    {"name": "Curve: Slope", "key": "heat_curve_slope", "address": 11174, "slave": DEFAULT_SLAVE, "min": 0.1, "max": 2.5, "step": 0.1, "icon": "mdi:chart-line", "scale": 0.1},
     
     # Heat Curve Coordinates
-    {"name": "Curve: -30°C", "key": "heat_curve_m30", "address": 11399, "slave": DEFAULT_SLAVE, "min": 0, "max": 45, "step": 1, "icon": "mdi:chart-bell-curve"},
-    {"name": "Curve: -15°C", "key": "heat_curve_m15", "address": 11400, "slave": DEFAULT_SLAVE, "min": 0, "max": 45, "step": 1, "icon": "mdi:chart-bell-curve"},
-    {"name": "Curve: -5°C",  "key": "heat_curve_m05", "address": 11401, "slave": DEFAULT_SLAVE, "min": 0, "max": 45, "step": 1, "icon": "mdi:chart-bell-curve"},
-    {"name": "Curve: 0°C",   "key": "heat_curve_00",  "address": 11402, "slave": DEFAULT_SLAVE, "min": 0, "max": 45, "step": 1, "icon": "mdi:chart-bell-curve"},
-    {"name": "Curve: +5°C",  "key": "heat_curve_p05", "address": 11403, "slave": DEFAULT_SLAVE, "min": 0, "max": 45, "step": 1, "icon": "mdi:chart-bell-curve"},
-    {"name": "Curve: +15°C", "key": "heat_curve_p15", "address": 11404, "slave": DEFAULT_SLAVE, "min": 0, "max": 45, "step": 1, "icon": "mdi:chart-bell-curve"},
+    # Scale 1 because these are Integers (e.g. 50 = 50°C)
+    {"name": "Curve: -30°C", "key": "heat_curve_m30", "address": 11399, "slave": DEFAULT_SLAVE, "min": 0, "max": 90, "step": 1, "icon": "mdi:chart-bell-curve", "scale": 1},
+    {"name": "Curve: -15°C", "key": "heat_curve_m15", "address": 11400, "slave": DEFAULT_SLAVE, "min": 0, "max": 90, "step": 1, "icon": "mdi:chart-bell-curve", "scale": 1},
+    {"name": "Curve: -5°C",  "key": "heat_curve_m05", "address": 11401, "slave": DEFAULT_SLAVE, "min": 0, "max": 90, "step": 1, "icon": "mdi:chart-bell-curve", "scale": 1},
+    {"name": "Curve: 0°C",   "key": "heat_curve_00",  "address": 11402, "slave": DEFAULT_SLAVE, "min": 0, "max": 90, "step": 1, "icon": "mdi:chart-bell-curve", "scale": 1},
+    {"name": "Curve: +5°C",  "key": "heat_curve_p05", "address": 11403, "slave": DEFAULT_SLAVE, "min": 0, "max": 90, "step": 1, "icon": "mdi:chart-bell-curve", "scale": 1},
+    {"name": "Curve: +15°C", "key": "heat_curve_p15", "address": 11404, "slave": DEFAULT_SLAVE, "min": 0, "max": 90, "step": 1, "icon": "mdi:chart-bell-curve", "scale": 1},
 ]
 
 INTERVAL_ENTITIES = [
