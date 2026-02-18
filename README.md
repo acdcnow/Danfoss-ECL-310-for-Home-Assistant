@@ -143,7 +143,7 @@ logger:
 
 The integration is currently translated into:
 
-* en English (Default)
+* us English (Default)
 * 🇩🇪 German
 * 🇫🇷 French
 * 🇮🇹 Italian
