@@ -1,142 +1,157 @@
+"""Number platform for the Danfoss ECL 310.
+
+Two kinds of number entity live here: the writable setpoints that map onto a
+holding register, and the virtual sliders that tune each coordinator's polling
+interval without writing anything to the controller.
+"""
+
+from __future__ import annotations
+
 from datetime import timedelta
+from typing import Any
+
+from modbus_connection import ModbusError
+
 from homeassistant.components.number import NumberEntity, RestoreNumber
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory, UnitOfTime
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.const import UnitOfTemperature, EntityCategory
 
-from .const import DOMAIN, NUMBER_ENTITIES, INTERVAL_ENTITIES
+from . import DanfossCoordinator, DanfossRuntimeData
+from .const import DOMAIN, INTERVAL_ENTITIES, NUMBER_ENTITIES
+from .device import DanfossEcl310
 
-async def async_setup_entry(hass, entry, async_add_entities):
-    """Setup number platform."""
-    data = hass.data[DOMAIN][entry.entry_id]
-    hub = data["hub"]
-    
-    entities = []
-    
-    # 1. Modbus Control Numbers (Target Temps)
-    # Use fast coordinator for UI responsiveness
-    coord_modbus = data["coord_60"] 
-    for conf in NUMBER_ENTITIES:
-        entities.append(DanfossNumber(coord_modbus, hub, conf, entry))
-        
-    # 2. Virtual Interval Config Numbers
-    # These control the coordinators themselves
-    for conf in INTERVAL_ENTITIES:
-        # We need to find the specific coordinator this slider controls
-        target_coordinator = data[conf["coordinator"]]
-        entities.append(DanfossIntervalNumber(target_coordinator, conf, entry))
-    
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
+) -> None:
+    """Set up the number entities for one config entry."""
+    runtime: DanfossRuntimeData = entry.runtime_data
+
+    entities: list[NumberEntity] = [
+        DanfossNumber(runtime.status, runtime.device, config, entry)
+        for config in NUMBER_ENTITIES
+    ]
+    entities.extend(
+        DanfossIntervalNumber(runtime.coordinator(config["coordinator"]), config, entry)
+        for config in INTERVAL_ENTITIES
+    )
+
     async_add_entities(entities)
 
-class DanfossNumber(CoordinatorEntity, NumberEntity):
-    """Representation of a Danfoss Setpoint Slider (Modbus)."""
+
+class DanfossNumber(CoordinatorEntity[DanfossCoordinator], NumberEntity):
+    """A setpoint held in a holding register."""
 
     _attr_has_entity_name = True
 
-    def __init__(self, coordinator, hub, config, entry):
+    def __init__(
+        self,
+        coordinator: DanfossCoordinator,
+        device: DanfossEcl310,
+        config: dict[str, Any],
+        entry: ConfigEntry,
+    ) -> None:
+        """Describe the setpoint from its entry in ``const.py``."""
         super().__init__(coordinator)
-        self._hub = hub
-        self._entry = entry
+        runtime: DanfossRuntimeData = entry.runtime_data
+
+        self._device = device
         self._config = config
-        
         self._address = config["address"]
-        self._slave = config["slave"]
-        
+        self._data_key = config["key"]
+        self._scale = config.get("scale", 1)
+
         self._attr_name = config["name"]
         self._attr_unique_id = f"{entry.entry_id}_number_{self._address}"
-        
+        self._attr_device_info = runtime.device_info
         self._attr_native_min_value = config["min"]
         self._attr_native_max_value = config["max"]
         self._attr_native_step = config["step"]
-        
-        self._attr_icon = config.get("icon", "mdi:thermostat")
-        self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
-        
-        self._data_key = config["key"]
-        
-        # FIX: Load scale from config, default to 0.1 (old behavior for temp targets)
-        self._scale = config.get("scale", 0.1)
+        self._attr_icon = config.get("icon")
+        # Not every setpoint has a unit: the heat curve slope is dimensionless
+        # and must not be labelled with degrees.
+        self._attr_native_unit_of_measurement = config.get("unit")
 
     @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._entry.entry_id)},
-            name=self._entry.title,
-            manufacturer="Danfoss",
-            model="ECL 310",
-        )
-
-    @property
-    def native_value(self):
-        val = self.coordinator.data.get(self._data_key)
-        if val is None:
+    def native_value(self) -> float | None:
+        """Return the current value of the register."""
+        raw = self.coordinator.data.get(self._data_key)
+        if raw is None:
             return None
-        # FIX: Use dynamic scaling instead of hardcoded / 10.0
-        return float(val) * self._scale
+        return float(raw) * self._scale
 
     async def async_set_native_value(self, value: float) -> None:
-        # FIX: Inverse scaling for writing
-        val_to_write = int(value / self._scale)
-        
-        success = await self._hub.write_register(
-            self._address, 
-            val_to_write, 
-            slave_id=self._slave
-        )
+        """Write the value to the controller."""
+        raw = int(round(value / self._scale))
 
-        if success:
-            self.coordinator.data[self._data_key] = val_to_write
-            self.async_write_ha_state()
-            await self.coordinator.async_request_refresh()
+        try:
+            await self._device.async_write_value(self._address, raw)
+        except ModbusError as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="write_failed",
+                translation_placeholders={
+                    "name": self._attr_name or self.entity_id or "setpoint"
+                },
+            ) from err
+
+        # Show the new value immediately; the next poll confirms what the
+        # controller actually accepted.
+        data = dict(self.coordinator.data)
+        data[self._data_key] = raw
+        self.coordinator.async_set_updated_data(data)
 
 
 class DanfossIntervalNumber(RestoreNumber):
-    """Virtual Slider to configure Polling Interval."""
-    
-    _attr_has_entity_name = True
-    _attr_native_unit_of_measurement = "s"
+    """A virtual slider that tunes one coordinator's polling interval."""
 
-    def __init__(self, coordinator, config, entry):
-        # RestoreNumber does NOT inherit from CoordinatorEntity directly in this specific way usually,
-        # but here we just need access to the coordinator object to modify it.
+    _attr_has_entity_name = True
+    _attr_native_unit_of_measurement = UnitOfTime.SECONDS
+
+    def __init__(
+        self,
+        coordinator: DanfossCoordinator,
+        config: dict[str, Any],
+        entry: ConfigEntry,
+    ) -> None:
+        """Describe the slider from its entry in ``const.py``."""
+        runtime: DanfossRuntimeData = entry.runtime_data
+
         self._coordinator = coordinator
-        self._entry = entry
-        
+        self._default_val = config["default"]
+
         self._attr_name = config["name"]
         self._attr_unique_id = f"{entry.entry_id}_interval_{config['key']}"
+        self._attr_device_info = runtime.device_info
         self._attr_native_min_value = config["min"]
         self._attr_native_max_value = config["max"]
         self._attr_native_step = config["step"]
         self._attr_icon = config["icon"]
         self._attr_entity_category = config.get("category", EntityCategory.CONFIG)
-        
-        self._default_val = config["default"]
 
     @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._entry.entry_id)},
-            name=self._entry.title,
-            manufacturer="Danfoss",
-            model="ECL 310",
-        )
-
-    @property
-    def native_value(self):
-        """Return the current interval from the coordinator."""
-        if self._coordinator.update_interval:
+    def native_value(self) -> float:
+        """Return the interval the coordinator is currently polling at."""
+        if self._coordinator.update_interval is not None:
             return self._coordinator.update_interval.total_seconds()
         return self._default_val
 
     async def async_set_native_value(self, value: float) -> None:
-        """Update the coordinator interval immediately."""
+        """Apply the interval to the coordinator straight away."""
         self._coordinator.update_interval = timedelta(seconds=value)
         self.async_write_ha_state()
 
-    async def async_added_to_hass(self):
-        """Restore last state."""
+    async def async_added_to_hass(self) -> None:
+        """Restore the interval chosen before the last restart."""
         await super().async_added_to_hass()
-        last_data = await self.async_get_last_number_data()
-        if last_data and last_data.native_value:
-            # Apply restored value to coordinator
-            self._coordinator.update_interval = timedelta(seconds=last_data.native_value)
+        if (last_data := await self.async_get_last_number_data()) is not None:
+            if last_data.native_value is not None:
+                self._coordinator.update_interval = timedelta(
+                    seconds=last_data.native_value
+                )

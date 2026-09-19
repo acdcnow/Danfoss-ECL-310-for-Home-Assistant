@@ -1,8 +1,7 @@
 {
   "config": {
     "abort": {
-      "already_configured": "Gerät ist bereits konfiguriert",
-      "cannot_connect": "Verbindung fehlgeschlagen"
+      "already_configured": "Gerät ist bereits konfiguriert"
     },
     "error": {
       "cannot_connect": "Verbindung fehlgeschlagen",
@@ -10,13 +9,30 @@
     },
     "step": {
       "user": {
+        "title": "Danfoss ECL 310 hinzufügen",
+        "description": "Verbinde dich mit deinem Danfoss ECL 310 Controller via Modbus TCP.",
         "data": {
           "host": "IP Adresse",
           "port": "Port",
           "name": "Name (z.B. ECL 1)"
-        },
-        "description": "Verbinde dich mit deinem Danfoss ECL 310 Controller via Modbus TCP."
+        }
+      },
+      "reconfigure": {
+        "title": "Danfoss ECL 310 aktualisieren",
+        "description": "Ändere die Adresse, unter der der Regler erreichbar ist.",
+        "data": {
+          "host": "IP Adresse",
+          "port": "Port"
+        }
       }
+    }
+  },
+  "exceptions": {
+    "modbus_error": {
+      "message": "Der Regler hat nicht geantwortet"
+    },
+    "write_failed": {
+      "message": "{name} konnte nicht an den Regler geschrieben werden"
     }
   },
   "entity": {

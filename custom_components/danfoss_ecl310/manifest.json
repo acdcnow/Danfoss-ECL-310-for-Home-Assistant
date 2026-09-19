@@ -1,16 +1,21 @@
 {
   "domain": "danfoss_ecl310",
   "name": "Danfoss ECL 310",
-  "version": "1.1.9",
+  "version": "1.2.0-beta.1",
   "documentation": "https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant",
   "issue_tracker": "https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/issues",
-  "requirements": [
-    "pymodbus>=3.0.0"
-  ],
-  "dependencies": [],
   "codeowners": [
     "@acdcnow"
   ],
+  "dependencies": [
+    "modbus"
+  ],
+  "config_flow": true,
+  "integration_type": "hub",
   "iot_class": "local_polling",
-  "config_flow": true
+  "loggers": [
+    "modbus_connection",
+    "pymodbus",
+    "tmodbus"
+  ]
 }

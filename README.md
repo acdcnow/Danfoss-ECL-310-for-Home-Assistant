@@ -2,30 +2,71 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![Maintainer](https://img.shields.io/badge/maintainer-acdcnow-blue)](https://github.com/acdcnow)
-[![Version](https://img.shields.io/badge/version-1.1.8-green)]()
+[![Version](https://img.shields.io/badge/version-1.2.0-green)]()
 
 This is a custom integration for **Home Assistant** to monitor and control **Danfoss ECL310** district heating controllers via **Modbus TCP**.
 Using Application 247.1 (V01)
 
-It supports reading temperatures, pump/valve statuses, and operating modes, as well as controlling target temperatures via standard Climate entities.
+It supports reading temperatures, pump/valve statuses, and operating modes, as well as writing target temperatures and the heat curve back to the controller.
+
+## ⚠️ Requirements
+
+* Home Assistant **2026.9** or newer.
+* The built-in **Modbus** integration (installed automatically as a dependency). It does not need any YAML configuration of its own.
+
+The controller is always addressed on Modbus unit **254**, which is fixed by Danfoss for application 247.1 and therefore is not asked for during setup.
+
+## 🧪 Pre-release: v1.2.0-beta.1
+
+This branch is published as the GitHub **pre-release** `v1.2.0-beta.1`. It is a testing build: see the [release notes](https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/releases/tag/v1.2.0-beta.1) for the full changelog and what is worth checking.
+
+> **⚠️ Home Assistant 2026.9 or newer is required.** The integration now reads the controller through Home Assistant's own Modbus integration (`async_get_unit`, introduced in 2026.9) instead of opening its own socket. On an older Home Assistant the integration will not load at all.
+
+### Installing the test build
+
+HACS hides pre-releases unless you have opted into beta versions, so the most reliable route is a manual install:
+
+1. Download the archive for the tag:
+   `https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/archive/refs/tags/v1.2.0-beta.1.zip`
+2. Unzip it and replace your existing `config/custom_components/danfoss_ecl310/` folder with the `custom_components/danfoss_ecl310/` folder from the archive.
+3. Restart Home Assistant.
+
+If you would rather stay inside HACS, enable pre-release/beta versions in the HACS settings and redownload the integration — HACS will then offer `v1.2.0-beta.1`.
+
+### Rolling back
+
+Entity IDs and unique IDs are unchanged, so reverting is safe: redownload **1.1.9** in HACS (or put the previous folder back) and restart Home Assistant. Your history, names and customisations are preserved.
+
+### What is worth checking
+
+* The controller's device page now shows a **serial number, firmware and hardware revision**. These never appeared in 1.1.9, because the sensors that held them were registered as disabled and so never ran.
+* **Temperatures, pump and valve states** read the same as before, but they are now explicitly requested from unit 254 rather than relying on a Modbus keyword that recent versions of the underlying library had removed.
+* Changing **Set: Target Comfort** / **Set: Target Setback** reaches the controller, and a rejected write now raises a visible error instead of failing silently.
+* If you run another Modbus integration against the same controller, both should keep working — they now share a single connection instead of competing for it.
+* **Reconfigure** on the integration's ⋮ menu lets you change the controller's IP without deleting and re-adding the entry.
+
+Please report anything that looks wrong on the [issue tracker](https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/issues), with debug logging enabled (see [Troubleshooting](#-troubleshooting)).
 
 ## ✨ Features
 
-* **Native Modbus TCP:** Connects directly to the controller (default port 502).
+* **Shared Modbus connection:** The integration asks Home Assistant's Modbus integration for a unit on your controller instead of opening its own socket, so it never competes with other Modbus integrations for the device.
 * **Multi-Device Support:** Add multiple ECL310 controllers by IP address; they will appear as separate devices in Home Assistant.
-* **Climate Control:** Adjust "Comfort" and "Setback" target temperatures directly from the Lovelace UI. Changes are written back to the controller.
+* **Setpoint Control:** Adjust "Comfort" and "Setback" target temperatures and the heating curve directly from the Lovelace UI. Changes are written back to the controller, and the controller's own response is reported if a write fails.
 * **Localized:** Fully translated into **English, German, French, Italian, and Spanish**.
-* **Robust Connection:** Handles different Modbus library versions and connection drops gracefully.
-* **Grouped Entities:** Sensors are logically named and grouped (e.g., "Pump: P1", "Sensor: S1") for easy sorting.
+* **Robust Connection:** Dropped links are re-established automatically, and a controller that stops answering marks its entities unavailable instead of silently reporting no value.
+* **Grouped Entities:** Sensors are logically named and grouped (e.g., "Mode: Pump P1", "Temp: Outdoor (S1)") for easy sorting.
 
 ## ⚙️ How it Works
 
-The integration connects to the ECL310 using the `pymodbus` library. It sets up three data coordinators to poll the device at different intervals to optimize network traffic:
+The integration reads the controller through the Home Assistant **Modbus** integration, which owns the TCP connection. Three data coordinators poll the device at different intervals, and each poll batches neighbouring registers into a single Modbus request to keep the traffic on the bus low:
 
-1. **Fast (30s):** Status updates (Pumps, Valves, Operating Modes) and Temperatures.
-2. **Slow (600s):** Settings, Limits, and Configuration values (Read-only).
+1. **Status (30s):** Pumps, valves, operating modes and the writable setpoints.
+2. **Temperature (60s):** Sensor readings and temperature limits.
+3. **Settings (600s):** Static configuration and system information.
 
-**Note:** Climate entities (Target Temperatures) are updated every 30 seconds. When you change a temperature in Home Assistant, the value is immediately written to the Modbus register.
+Every interval is adjustable at runtime through the *Interval:* number entities.
+
+**Note:** Setpoints are polled on the fastest interval. When you change a value in Home Assistant it is written to the Modbus register immediately and shown right away; the next poll confirms what the controller accepted.
 
 ---
 
@@ -58,7 +99,9 @@ The integration connects to the ECL310 using the `pymodbus` library. It sets up 
 5. Enter the **Port** (Default is `502`).
 6. Click Submit.
 
-*To add a second device, simply repeat these steps with a different IP address.*
+The connection is verified before the entry is created, so a wrong IP is reported as *Failed to connect* rather than creating a broken device.
+
+*To add a second device, simply repeat these steps with a different IP address. To point an existing entry at a new address, use the **Reconfigure** option on the integration's menu — there is no need to delete and re-add it.*
 
 ---
 
@@ -70,47 +113,49 @@ This integration is designed to be easily extensible. All register mappings are 
 
 1. Open `custom_components/danfoss_ecl310/const.py`.
 2. Locate the appropriate list based on how often you want the data to update:
-* `SENSORS_60S`: Status/Modes (Updates every 30s).
-* `SENSORS_300S`: Temperatures (Updates every 30s).
-* `SENSORS_600S`: Static settings (Updates every 10 mins).
-
-
+   * `SENSORS_STATUS`: Status/Modes (default 30s).
+   * `SENSORS_TEMPERATURE`: Temperatures (default 60s).
+   * `SENSORS_SETTINGS`: Static settings and system info (default 600s).
 3. Add a new line to the list dictionary.
+4. **Restart Home Assistant.**
 
 ### Sensor Configuration Structure
 
 ```python
 {
     "key": "unique_internal_key",   # Must be unique per device (e.g., "return_temp")
-    "name": "Displayed Name",       # e.g., "Sensor: Return Temp"
+    "name": "Displayed Name",       # e.g., "Temp: Return"
     "addr": 12345,                  # The Modbus Register Address
     "type": "input",                # "input" (Input Register) or "holding" (Holding Register)
-    "scale": 0.01,                  # Multiplier (e.g., 0.01 to convert 2350 to 23.50)
-    "unit": UnitOfTemperature.CELSIUS, # Optional: Unit
+    "signed": True,                 # Optional: decode as a negative-capable int16. Default False.
+    "scale": 0.01,                  # Optional: multiplier (e.g. 0.01 turns 2350 into 23.50). Default 1.
+    "unit": UnitOfTemperature.CELSIUS,        # Optional: Unit
+    "device_class": SensorDeviceClass.TEMPERATURE,  # Optional: Device class
     "icon": "mdi:thermometer",      # Optional: Icon
+    "entity_category": EntityCategory.DIAGNOSTIC,   # Optional: "Diagnostic"/"Config" grouping
+    "precision": 1,                 # Optional: suggested number of decimals
     "trans_key": "simple_on_off"    # Optional: Translation key for state mapping
 }
-
 ```
+
+> **`signed` matters.** Only registers that can genuinely hold a negative number should set it. Temperatures do; counters, status codes, serial numbers and firmware revisions do not, and marking one of those as signed turns e.g. a serial number of `50000` into `-15536`.
 
 ### Example: Adding a new Temperature Sensor
 
 If you want to read a temperature from register `11200`:
 
-1. Go to `SENSORS_300S` in `const.py`.
+1. Go to `SENSORS_TEMPERATURE` in `const.py`.
 2. Add this line:
 ```python
-{"key": "my_new_temp", "name": "Sensor: New Temp", "addr": 11200, "type": "input", "scale": 0.01, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE},
-
+{"key": "my_new_temp", "name": "Temp: New", "addr": 11200, "type": "input", "signed": True, "scale": 0.01, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE},
 ```
-
-
 3. **Restart Home Assistant.**
 
 ### Available Translation Keys
 
 If you are reading a status register (0/1), you can use these keys in `trans_key` to make the UI show text instead of numbers:
 
+* `operating_mode`: 0 = Standby, 1 = Schedule, 2 = Comfort, 3 = Setback, 4 = Frost Protection, 5 = Manual
 * `simple_on_off`: 0 = Off, 1 = On (Localized)
 * `pump_mode`: 0 = Auto, 1 = Off, 2 = On
 * `valve_manual_mode`: 0 = Auto, 1 = Stop, 2 = Closing, 3 = Opening
@@ -128,14 +173,16 @@ logger:
   default: info
   logs:
     custom_components.danfoss_ecl310: debug
+    modbus_connection: debug
     pymodbus: debug
-
 ```
 
 **Common Issues:**
 
-* **"Connection failed":** Check if the IP is correct and if port 502 is open. Ensure no other system is blocking the Modbus port on the Danfoss controller.
-* **Entities Unavailable:** Check the logs. If the Danfoss controller is busy or restarting, it might miss a poll cycle. The integration will automatically reconnect.
+* **"Failed to connect" during setup:** Check that the IP is correct and that port 502 is reachable. Make sure no other Modbus client is holding the controller's single available session.
+* **Entities unavailable:** The controller did not answer a poll — usually because it is busy or restarting. The integration reconnects by itself; there is no need to reload the integration.
+* **Values still show as "Unknown" after upgrading from 1.1.x:** The *System:* sensors used to be registered as disabled. Entities that already exist keep the state they were created with, so enable them once under **Settings → Devices & Services → Entities** if you want to see them.
+* **Setting the comfort temperature has no effect at the top of the range:** The setpoint range defaults to 10–90 °C. Verify the permitted range for your application in the controller and adjust `min`/`max` in `const.py` if it differs.
 
 ---
 
@@ -150,3 +197,15 @@ The integration is currently translated into:
 * 🇪🇸 Spanish
 
 The language is automatically selected based on your Home Assistant user profile settings.
+
+---
+
+## 🧩 Project layout
+
+| File | Responsibility |
+| --- | --- |
+| `__init__.py` | Entry setup, the three coordinators, and the device registry entry. |
+| `device.py` | Everything that knows the controller's registers. No Home Assistant imports, so it is testable against a mock bus. |
+| `const.py` | The declarative register and entity map. |
+| `sensor.py` / `number.py` | The entities. |
+| `config_flow.py` | Setup and reconfigure flows. |

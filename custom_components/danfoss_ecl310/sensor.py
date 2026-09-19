@@ -1,164 +1,131 @@
-from homeassistant.components.sensor import SensorEntity
+"""Sensor platform for the Danfoss ECL 310."""
+
+from __future__ import annotations
+
+from typing import Any, Final
+
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers import device_registry as dr
-from .const import DOMAIN, SENSORS_60S, SENSORS_300S, SENSORS_600S
 
-async def async_setup_entry(hass, entry, async_add_entities):
-    """Sets up sensors for a specific Config Entry."""
-    data = hass.data[DOMAIN][entry.entry_id]
-    entities = []
+from . import DanfossCoordinator, DanfossRuntimeData
+from .const import SENSOR_GROUPS
 
-    # Create sensors
-    for conf in SENSORS_60S:
-        entities.append(DanfossSensor(data["coord_60"], conf, entry))
-    for conf in SENSORS_300S:
-        entities.append(DanfossSensor(data["coord_300"], conf, entry))
-    for conf in SENSORS_600S:
-        entities.append(DanfossSensor(data["coord_600"], conf, entry))
+#: Valve travel is derived from the two per-valve status registers, so it is not
+#: a register of its own.
+MOVEMENT_SENSORS: Final[tuple[tuple[str, str, str], ...]] = (
+    ("M1 Movement", "valve_m1_opening", "valve_m1_closing"),
+    ("M2 Movement", "valve_m2_opening", "valve_m2_closing"),
+    ("M3 Movement", "valve_m3_opening", "valve_m3_closing"),
+)
 
-    # Create Movement Sensors
-    entities.append(DanfossMovementSensor(data["coord_60"], "M1 Movement", "valve_m1_opening", "valve_m1_closing", entry))
-    entities.append(DanfossMovementSensor(data["coord_60"], "M2 Movement", "valve_m2_opening", "valve_m2_closing", entry))
-    entities.append(DanfossMovementSensor(data["coord_60"], "M3 Movement", "valve_m3_opening", "valve_m3_closing", entry))
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
+) -> None:
+    """Set up the sensors for one config entry."""
+    runtime: DanfossRuntimeData = entry.runtime_data
+
+    entities = [
+        DanfossSensor(runtime.coordinator(group), config, entry)
+        for group, configs, _ in SENSOR_GROUPS
+        for config in configs
+    ]
+    entities.extend(
+        DanfossMovementSensor(runtime.status, name, opening, closing, entry)
+        for name, opening, closing in MOVEMENT_SENSORS
+    )
 
     async_add_entities(entities)
 
 
-class DanfossSensor(CoordinatorEntity, SensorEntity):
+class DanfossSensor(CoordinatorEntity[DanfossCoordinator], SensorEntity):
+    """A register-backed sensor."""
+
     _attr_has_entity_name = True
 
-    def __init__(self, coordinator, config, entry):
+    def __init__(
+        self, coordinator: DanfossCoordinator, config: dict[str, Any], entry: ConfigEntry
+    ) -> None:
+        """Describe the sensor from its entry in ``const.py``."""
         super().__init__(coordinator)
+        runtime: DanfossRuntimeData = entry.runtime_data
+
         self._config = config
-        self._entry = entry
         self._key = config["key"]
+        self._scale = config.get("scale", 1)
+
         self._attr_name = config["name"]
         self._attr_unique_id = f"{entry.entry_id}_{self._key}"
-        self._scale = config.get("scale", 1)
-        
+        self._attr_device_info = runtime.device_info
         self._attr_device_class = config.get("device_class")
         self._attr_native_unit_of_measurement = config.get("unit")
         self._attr_icon = config.get("icon")
         self._attr_translation_key = config.get("trans_key")
         self._attr_suggested_display_precision = config.get("precision")
         self._attr_entity_category = config.get("entity_category")
-
-        # SYSTEM INFO SENSORS:
-        # Diese sind "versteckt" (disabled), da sie nur die Device Info aktualisieren sollen.
-        if self._key in ["system_serial_number", "system_app_key", "system_firmware", "system_hardware", "system_modbus_addr"]:
-            self._attr_entity_registry_enabled_default = False
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._entry.entry_id)},
-            name=self._entry.title,
-            manufacturer="Danfoss",
-            model="ECL 310",
-            configuration_url=f"http://{self._entry.data['host']}",
+        self._attr_entity_registry_enabled_default = config.get(
+            "enabled_default", True
         )
 
     @property
-    def native_value(self):
-        val = self.coordinator.data.get(self._key)
-        if val is None:
+    def native_value(self) -> Any:
+        """Return the register value, scaled and decoded."""
+        raw = self.coordinator.data.get(self._key)
+        if raw is None:
             return None
-        
-        # --- UPDATE DEVICE REGISTRY LOGIC ---
-        # Sobald Daten kommen, aktualisieren wir die Geräte-Karte oben.
 
-        if self._key == "system_firmware":
-            val_int = int(val)
-            formatted = f"{val_int >> 8}.{val_int & 0xFF:02d}"
-            self._update_device_registry(sw_version=formatted)
-            return formatted
+        if (value_fn := self._config.get("value_fn")) is not None:
+            return value_fn(raw)
 
-        if self._key == "system_hardware":
-            val_str = str(val)
-            self._update_device_registry(hw_version=f"Rev {val_str}")
-            return val_str
+        value: int | float = raw * self._scale if self._scale != 1 else raw
 
-        if self._key == "system_serial_number":
-            val_str = str(val)
-            self._update_device_registry(serial_number=val_str)
-            return val_str
+        if self._attr_translation_key is not None:
+            # The state translations are keyed by the plain status code
+            # ("0", "1", ...), so an integral float must not become "0.0".
+            if isinstance(value, float) and value.is_integer():
+                value = int(value)
+            return str(value)
 
-        if self._key == "system_app_key":
-            val_str = str(val)
-            # App Key gibt es nicht als Feld, wir hängen es ans Modell an
-            self._update_device_registry(model_suffix=f"Key: {val_str}")
-            return val_str
-
-        if self._key == "system_modbus_addr":
-            val_str = str(val)
-            # Modbus Addr gibt es nicht als Feld, wir hängen es ans Modell an
-            self._update_device_registry(model_suffix=f"Addr: {val_str}")
-            return val_str
-
-        # --- STANDARD SCALING ---
-        if self._scale != 1:
-            return float(val) * self._scale
-        
-        if self._attr_translation_key:
-            return str(val)
-            
-        return val
-
-    def _update_device_registry(self, sw_version=None, hw_version=None, serial_number=None, model_suffix=None):
-        """Helper: Schreibt Infos direkt in die HA Device Registry."""
-        dev_reg = dr.async_get(self.hass)
-        device = dev_reg.async_get_device(identifiers={(DOMAIN, self._entry.entry_id)})
-        
-        if not device:
-            return
-
-        update_data = {}
-        
-        # Standard Felder
-        if sw_version:
-            update_data["sw_version"] = sw_version
-        if hw_version:
-            update_data["hw_version"] = hw_version
-        if serial_number:
-            update_data["serial_number"] = serial_number
-            
-        # Modell Erweiterung (für App Key und Addr)
-        if model_suffix:
-            current_model = device.model or "ECL 310"
-            # Verhindern, dass wir es doppelt anhängen
-            if model_suffix not in current_model:
-                update_data["model"] = f"{current_model} | {model_suffix}"
-
-        if update_data:
-            dev_reg.async_update_device(device.id, **update_data)
+        return value
 
 
-class DanfossMovementSensor(CoordinatorEntity, SensorEntity):
+class DanfossMovementSensor(CoordinatorEntity[DanfossCoordinator], SensorEntity):
+    """Valve travel, derived from the opening and closing status registers."""
+
     _attr_has_entity_name = True
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = ["opening", "closing", "stop"]
+    _attr_translation_key = "movement_state"
 
-    def __init__(self, coordinator, name, open_key, close_key, entry):
+    def __init__(
+        self,
+        coordinator: DanfossCoordinator,
+        name: str,
+        opening_key: str,
+        closing_key: str,
+        entry: ConfigEntry,
+    ) -> None:
+        """Set up the sensor from its two status registers."""
         super().__init__(coordinator)
-        self._open_key = open_key
-        self._close_key = close_key
-        self._entry = entry
+        runtime: DanfossRuntimeData = entry.runtime_data
+
+        self._opening_key = opening_key
+        self._closing_key = closing_key
+
         self._attr_name = name
-        self._attr_unique_id = f"{entry.entry_id}_move_{open_key}"
-        self._attr_translation_key = "movement_state"
+        self._attr_unique_id = f"{entry.entry_id}_move_{opening_key}"
+        self._attr_device_info = runtime.device_info
 
     @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._entry.entry_id)},
-            name=self._entry.title,
-            manufacturer="Danfoss",
-            model="ECL 310",
-        )
-
-    @property
-    def native_value(self):
-        is_opening = self.coordinator.data.get(self._open_key) == 1
-        is_closing = self.coordinator.data.get(self._close_key) == 1
-        if is_opening: return "opening"
-        elif is_closing: return "closing"
+    def native_value(self) -> str:
+        """Return where the valve is currently travelling."""
+        if self.coordinator.data.get(self._opening_key) == 1:
+            return "opening"
+        if self.coordinator.data.get(self._closing_key) == 1:
+            return "closing"
         return "stop"

@@ -1,112 +1,175 @@
-import asyncio
-import logging
-from datetime import timedelta
+"""The Danfoss ECL 310 integration.
 
+Setting up an entry asks the ``modbus`` integration for a unit on the
+controller's connection rather than opening a socket of our own. Two
+integrations that ask for the same host and port share one connection, so their
+requests serialize behind it instead of competing for the device, and Home
+Assistant closes the link when the last holder unloads.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+from dataclasses import dataclass
+from datetime import timedelta
+import logging
+from typing import Final
+
+from modbus_connection import ModbusError, ModbusTcpParams
+
+from homeassistant.components.modbus import async_get_unit
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_HOST, CONF_PORT, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.const import CONF_HOST, CONF_PORT
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
+    DEFAULT_UNIT_ID,
     DOMAIN,
-    SENSORS_60S,
-    SENSORS_300S,
-    SENSORS_600S,
-    CLIMATE_ENTITIES,
-    DEFAULT_SLAVE,
-    # New Constants
-    DEFAULT_INTERVAL_FAST,
-    DEFAULT_INTERVAL_TEMP,
-    DEFAULT_INTERVAL_SLOW,
+    MANUFACTURER,
+    MODEL,
+    NUMBER_ENTITIES,
+    SENSOR_GROUPS,
 )
-from .modbus_client import DanfossModbusHub
+from .device import HOLDING, DanfossEcl310, RegisterRef, build_register_refs
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["sensor", "number"]
+PLATFORMS: Final[list[Platform]] = [Platform.NUMBER, Platform.SENSOR]
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Sets up the integration."""
-    host = entry.data[CONF_HOST]
-    port = entry.data[CONF_PORT]
-    
-    _LOGGER.debug(f"Setup Danfoss ECL310 integration for {host}:{port}")
+#: The writable setpoints are polled alongside the status registers so the
+#: sliders follow the controller promptly.
+NUMBER_REFS: Final[tuple[RegisterRef, ...]] = tuple(
+    RegisterRef(key=config["key"], address=config["address"], space=HOLDING)
+    for config in NUMBER_ENTITIES
+)
 
-    hub = DanfossModbusHub(host, port)
-    await hub.connect()
 
-    async def create_coordinator(interval, sensors, name_suffix):
-        async def async_update_data():
-            data = {}
-            
-            # 1. Read standard sensors
-            for sens in sensors:
-                val = await hub.read_register(
-                    sens["addr"], 
-                    DEFAULT_SLAVE, 
-                    input_type=sens["type"]
-                )
-                data[sens["key"]] = val
+class DanfossCoordinator(DataUpdateCoordinator[dict[str, int | None]]):
+    """Poll one group of registers from the controller."""
 
-            # 2. Read Number Entities (Target Temps) only on fast loop
-            # We assume the fast loop (default 30s) handles responsiveness
-            if interval == DEFAULT_INTERVAL_FAST: 
-                # Import NUMBER_ENTITIES locally to avoid circular imports if any
-                from .const import NUMBER_ENTITIES
-                for num in NUMBER_ENTITIES:
-                    val = await hub.read_register(
-                        num["address"], 
-                        num["slave"], 
-                        input_type="holding"
-                    )
-                    data[num["key"]] = val
-
-            return data
-
-        coordinator = DataUpdateCoordinator(
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        device: DanfossEcl310,
+        refs: list[RegisterRef],
+        name: str,
+        interval: int,
+    ) -> None:
+        """Set up the coordinator for a single register group."""
+        super().__init__(
             hass,
             _LOGGER,
-            name=f"danfoss_ecl310_{name_suffix}",
-            update_method=async_update_data,
-            # Start with default interval
+            config_entry=entry,
+            name=f"{entry.title} {name}",
             update_interval=timedelta(seconds=interval),
         )
+        self.device = device
+        self._refs = tuple(refs)
 
+    async def _async_update_data(self) -> dict[str, int | None]:
+        """Read every register in this group.
+
+        A ``ModbusError`` here means the link is down or the controller did not
+        answer at all; raising :class:`UpdateFailed` marks the entities
+        unavailable until the next successful poll. Reconnecting is automatic,
+        so the entry must not be reloaded.
+        """
+        try:
+            return await self.device.async_read_group(self._refs)
+        except ModbusError as err:
+            raise UpdateFailed(
+                translation_domain=DOMAIN,
+                translation_key="modbus_error",
+            ) from err
+
+
+@dataclass
+class DanfossRuntimeData:
+    """Objects the entity platforms read from."""
+
+    device: DanfossEcl310
+    device_info: dr.DeviceInfo
+    status: DanfossCoordinator
+    temperature: DanfossCoordinator
+    settings: DanfossCoordinator
+
+    def coordinator(self, name: str) -> DanfossCoordinator:
+        """Return a coordinator by the name used in ``INTERVAL_ENTITIES``."""
+        return getattr(self, name)
+
+
+#: This integration's config entry, carrying its runtime data.
+DanfossConfigEntry = ConfigEntry[DanfossRuntimeData]
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: DanfossConfigEntry) -> bool:
+    """Set up a Danfoss ECL 310 from a config entry."""
+    unit = async_get_unit(
+        hass,
+        entry,
+        ModbusTcpParams(host=entry.data[CONF_HOST], port=entry.data[CONF_PORT]),
+        DEFAULT_UNIT_ID,
+    )
+    device = DanfossEcl310(unit)
+
+    coordinators: dict[str, DanfossCoordinator] = {}
+    for name, configs, interval in SENSOR_GROUPS:
+        refs = build_register_refs(configs)
+        if name == "status":
+            refs.extend(NUMBER_REFS)
+        coordinator = DanfossCoordinator(hass, entry, device, refs, name, interval)
+        # Raises ConfigEntryNotReady if the controller cannot be reached, so
+        # Home Assistant retries setup instead of creating dead entities.
         await coordinator.async_config_entry_first_refresh()
-        return coordinator
+        coordinators[name] = coordinator
 
-    # Create Coordinators using the constants
-    
-    # Group 1 (Status): Default 30s
-    _LOGGER.info(f"Creating coordinator for Status ({DEFAULT_INTERVAL_FAST}s default)...")
-    coord_60 = await create_coordinator(DEFAULT_INTERVAL_FAST, SENSORS_60S, "fast_30s")
-    
-    # Group 2 (Temperatures): Default 30s
-    _LOGGER.info(f"Creating coordinator for Temperatures ({DEFAULT_INTERVAL_TEMP}s default)...")
-    coord_300 = await create_coordinator(DEFAULT_INTERVAL_TEMP, SENSORS_300S, "temp_30s")
-    
-    # Group 3 (Settings/Limits): Default 600s
-    _LOGGER.info(f"Creating coordinator for Settings ({DEFAULT_INTERVAL_SLOW}s default)...")
-    coord_600 = await create_coordinator(DEFAULT_INTERVAL_SLOW, SENSORS_600S, "settings_600s")
-
-    hass.data.setdefault(DOMAIN, {})
-    # Store keys exactly as expected by number.py
-    hass.data[DOMAIN][entry.entry_id] = {
-        "hub": hub,
-        "coord_60": coord_60,
-        "coord_300": coord_300,
-        "coord_600": coord_600
-    }
+    settings = coordinators["settings"]
+    entry.runtime_data = DanfossRuntimeData(
+        device=device,
+        device_info=_device_info(entry, settings.data),
+        status=coordinators["status"],
+        temperature=coordinators["temperature"],
+        settings=settings,
+    )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    
     return True
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    
-    if unload_ok:
-        data = hass.data[DOMAIN].pop(entry.entry_id)
-        data["hub"].close()
-        
-    return unload_ok
+
+async def async_unload_entry(hass: HomeAssistant, entry: DanfossConfigEntry) -> bool:
+    """Unload a config entry.
+
+    There is nothing to tear down here: the connection belongs to the ``modbus``
+    integration, which closes it once the last entry holding a unit on it
+    unloads.
+    """
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+def _device_info(
+    entry: ConfigEntry, data: Mapping[str, int | None]
+) -> dr.DeviceInfo:
+    """Describe the controller to the device registry.
+
+    The identity registers are taken from the settings coordinator, which has
+    already read them, rather than from a sensor entity. The previous
+    implementation read them from sensors that were disabled by default, so the
+    values never actually reached the registry.
+    """
+    serial_number = data.get("system_serial_number")
+    firmware = data.get("system_firmware")
+    hardware = data.get("system_hardware")
+
+    return dr.DeviceInfo(
+        identifiers={(DOMAIN, entry.entry_id)},
+        name=entry.title,
+        manufacturer=MANUFACTURER,
+        model=MODEL,
+        serial_number=None if serial_number is None else str(serial_number),
+        sw_version=None if firmware is None else f"{firmware >> 8}.{firmware & 0xFF:02d}",
+        hw_version=None if hardware is None else f"Rev {hardware}",
+        configuration_url=f"http://{entry.data[CONF_HOST]}",
+    )
