@@ -27,6 +27,8 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .const import (
     DEFAULT_UNIT_ID,
     DOMAIN,
+    GROUP_NAMES,
+    GROUPS,
     MANUFACTURER,
     MODEL,
     NUMBER_ENTITIES,
@@ -91,7 +93,9 @@ class DanfossRuntimeData:
     """Objects the entity platforms read from."""
 
     device: DanfossEcl310
-    device_info: dr.DeviceInfo
+    #: Device information per entity group. Every entry is a child device of the
+    #: controller, which the entity platform creates on its own.
+    device_info: Mapping[str, dr.ChildDeviceInfo]
     status: DanfossCoordinator
     temperature: DanfossCoordinator
     settings: DanfossCoordinator
@@ -127,9 +131,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: DanfossConfigEntry) -> b
         coordinators[name] = coordinator
 
     settings = coordinators["settings"]
+
+    # The controller itself carries the identity and nothing else; it is the
+    # parent of the group devices, which hold all the entities.
+    controller = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id,
+        **_controller_device_info(entry, settings.data),
+    )
+
     entry.runtime_data = DanfossRuntimeData(
         device=device,
-        device_info=_device_info(entry, settings.data),
+        device_info=_group_device_info(entry, controller.id),
         status=coordinators["status"],
         temperature=coordinators["temperature"],
         settings=settings,
@@ -149,15 +161,15 @@ async def async_unload_entry(hass: HomeAssistant, entry: DanfossConfigEntry) -> 
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
-def _device_info(
+def _controller_device_info(
     entry: ConfigEntry, data: Mapping[str, int | None]
 ) -> dr.DeviceInfo:
     """Describe the controller to the device registry.
 
     The identity registers are taken from the settings coordinator, which has
-    already read them, rather than from a sensor entity. The previous
-    implementation read them from sensors that were disabled by default, so the
-    values never actually reached the registry.
+    already read them, rather than from a sensor entity. Reading them from
+    sensors that were disabled by default is why they never reached the registry
+    before.
     """
     serial_number = data.get("system_serial_number")
     firmware = data.get("system_firmware")
@@ -173,3 +185,24 @@ def _device_info(
         hw_version=None if hardware is None else f"Rev {hardware}",
         configuration_url=f"http://{entry.data[CONF_HOST]}",
     )
+
+
+def _group_device_info(
+    entry: ConfigEntry, controller_device_id: str
+) -> dict[str, dr.ChildDeviceInfo]:
+    """Build one child device per entity group.
+
+    A child device carries no identity of its own - no manufacturer, model,
+    serial number or configuration URL, only a name and a link to its parent -
+    which is exactly what the device registry expects of one. The entities
+    reference these through ``_attr_device_info`` and the entity platform creates
+    the devices from them.
+    """
+    return {
+        group: dr.ChildDeviceInfo(
+            identifiers={(DOMAIN, f"{entry.entry_id}_{group}")},
+            parent_device_id=controller_device_id,
+            name=GROUP_NAMES[group],
+        )
+        for group in GROUPS
+    }

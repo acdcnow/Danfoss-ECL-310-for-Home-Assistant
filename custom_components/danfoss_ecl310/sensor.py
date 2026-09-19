@@ -11,7 +11,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import DanfossCoordinator, DanfossRuntimeData
-from .const import SENSOR_GROUPS
+from .const import GROUP_SENSORS, SENSOR_GROUPS, device_group_for_sensor
 
 #: Valve travel is derived from the two per-valve status registers, so it is not
 #: a register of its own.
@@ -31,7 +31,12 @@ async def async_setup_entry(
     runtime: DanfossRuntimeData = entry.runtime_data
 
     entities = [
-        DanfossSensor(runtime.coordinator(group), config, entry)
+        DanfossSensor(
+            runtime.coordinator(group),
+            config,
+            entry,
+            device_group_for_sensor(config),
+        )
         for group, configs, _ in SENSOR_GROUPS
         for config in configs
     ]
@@ -49,7 +54,11 @@ class DanfossSensor(CoordinatorEntity[DanfossCoordinator], SensorEntity):
     _attr_has_entity_name = True
 
     def __init__(
-        self, coordinator: DanfossCoordinator, config: dict[str, Any], entry: ConfigEntry
+        self,
+        coordinator: DanfossCoordinator,
+        config: dict[str, Any],
+        entry: ConfigEntry,
+        device_group: str,
     ) -> None:
         """Describe the sensor from its entry in ``const.py``."""
         super().__init__(coordinator)
@@ -61,7 +70,7 @@ class DanfossSensor(CoordinatorEntity[DanfossCoordinator], SensorEntity):
 
         self._attr_name = config["name"]
         self._attr_unique_id = f"{entry.entry_id}_{self._key}"
-        self._attr_device_info = runtime.device_info
+        self._attr_device_info = runtime.device_info[device_group]
         self._attr_device_class = config.get("device_class")
         self._attr_native_unit_of_measurement = config.get("unit")
         self._attr_icon = config.get("icon")
@@ -119,7 +128,7 @@ class DanfossMovementSensor(CoordinatorEntity[DanfossCoordinator], SensorEntity)
 
         self._attr_name = name
         self._attr_unique_id = f"{entry.entry_id}_move_{opening_key}"
-        self._attr_device_info = runtime.device_info
+        self._attr_device_info = runtime.device_info[GROUP_SENSORS]
 
     @property
     def native_value(self) -> str:

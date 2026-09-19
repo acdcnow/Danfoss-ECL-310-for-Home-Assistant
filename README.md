@@ -2,7 +2,7 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![Maintainer](https://img.shields.io/badge/maintainer-acdcnow-blue)](https://github.com/acdcnow)
-[![Version](https://img.shields.io/badge/version-1.2.0--beta.2-green)]()
+[![Version](https://img.shields.io/badge/version-1.2.0--beta.3-green)]()
 
 ![Danfoss ECL 310](custom_components/danfoss_ecl310/brand/logo.png)
 
@@ -18,22 +18,24 @@ It supports reading temperatures, pump/valve statuses, and operating modes, as w
 
 The controller is always addressed on Modbus unit **254**, which is fixed by Danfoss for application 247.1 and therefore is not asked for during setup.
 
-## 🧪 Pre-release: v1.2.0-beta.2
+## 🧪 Pre-release: v1.2.0-beta.3
 
-This branch is published as the GitHub **pre-release** `v1.2.0-beta.2`. It is a testing build: see the [release notes](https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/releases/tag/v1.2.0-beta.2) for the full changelog and what is worth checking.
+This branch is published as the GitHub **pre-release** `v1.2.0-beta.3`. It is a testing build: see the [release notes](https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/releases/tag/v1.2.0-beta.3) for the full changelog and what is worth checking.
 
 > **⚠️ Home Assistant 2026.9 or newer is required.** The integration now reads the controller through Home Assistant's own Modbus integration (`async_get_unit`, introduced in 2026.9) instead of opening its own socket. On an older Home Assistant the integration will not load at all.
+
+**What this build changes:** the controller's entities are now spread over five devices (see [Devices](#-devices)) instead of all sitting on one page. Entity IDs and unique IDs are untouched, so nothing has to be set up again — the entities simply appear under their new device.
 
 ### Installing the test build
 
 HACS hides pre-releases unless you have opted into beta versions, so the most reliable route is a manual install:
 
 1. Download the archive for the tag:
-   `https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/archive/refs/tags/v1.2.0-beta.2.zip`
+   `https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/archive/refs/tags/v1.2.0-beta.3.zip`
 2. Unzip it and replace your existing `config/custom_components/danfoss_ecl310/` folder with the `custom_components/danfoss_ecl310/` folder from the archive.
 3. Restart Home Assistant.
 
-If you would rather stay inside HACS, enable pre-release/beta versions in the HACS settings and redownload the integration — HACS will then offer `v1.2.0-beta.2`.
+If you would rather stay inside HACS, enable pre-release/beta versions in the HACS settings and redownload the integration — HACS will then offer `v1.2.0-beta.3`.
 
 ### Rolling back
 
@@ -41,6 +43,7 @@ Entity IDs and unique IDs are unchanged, so reverting is safe: redownload **1.1.
 
 ### What is worth checking
 
+* The entities are now grouped onto several devices — **Controls**, **Sensors**, **Pumps**, **Configuration** and **Diagnostics**, all hanging off the controller device. Check that each one lands where you would expect.
 * The controller's device page now shows a **serial number, firmware and hardware revision**. These never appeared in 1.1.9, because the sensors that held them were registered as disabled and so never ran.
 * **Temperatures, pump and valve states** read the same as before, but they are now explicitly requested from unit 254 rather than relying on a Modbus keyword that recent versions of the underlying library had removed.
 * Changing **Set: Target Comfort** / **Set: Target Setback** reaches the controller, and a rejected write now raises a visible error instead of failing silently.
@@ -69,6 +72,25 @@ The integration reads the controller through the Home Assistant **Modbus** integ
 Every interval is adjustable at runtime through the *Interval:* number entities.
 
 **Note:** Setpoints are polled on the fastest interval. When you change a value in Home Assistant it is written to the Modbus register immediately and shown right away; the next poll confirms what the controller accepted.
+
+## 🧩 Devices
+
+The integration creates a device for the controller itself and a **child device per group**, so related entities are not all jumbled onto one page:
+
+| Device | What is on it |
+| --- | --- |
+| **ECL 310** *(the controller)* | The identity only — manufacturer, model, serial number, firmware and hardware revision. No entities of its own. |
+| **Controls** | The writable values: comfort and setback setpoints, heat curve slope and the six curve coordinates. |
+| **Sensors** | The live readings: temperatures, operating modes, valve travel, and the return and summer limits. |
+| **Pumps** | The three circulation pumps and their manual modes. |
+| **Configuration** | The polling interval sliders. |
+| **Diagnostics** | Limits, setpoint read-backs and system information — hidden from the main view by their entity category. |
+
+The group devices are [child devices](https://developers.home-assistant.io/blog/2026/08/19/device-registry-websocket-api-changes) of the controller, so they nest underneath it rather than appearing as unrelated entries. Disabling the controller disables its children along with it.
+
+**Upgrading changes nothing about your entities.** Entity IDs and unique IDs are stored the first time an entity is registered, so existing installs keep exactly the IDs they have. On a *fresh* install the group device's name becomes part of any newly generated entity ID — for example `number.controls_set_target_comfort` — because Home Assistant prefixes the device name for entities that use it.
+
+The grouping itself lives in `const.py`: `device_group_for_sensor()` decides between Sensors, Pumps and Diagnostics, `NUMBER_ENTITIES` go to Controls and `INTERVAL_ENTITIES` to Configuration.
 
 ---
 
@@ -183,6 +205,7 @@ logger:
 
 * **"Failed to connect" during setup:** Check that the IP is correct and that port 502 is reachable. Make sure no other Modbus client is holding the controller's single available session.
 * **Entities unavailable:** The controller did not answer a poll — usually because it is busy or restarting. The integration reconnects by itself; there is no need to reload the integration.
+* **The controller's entities sit on a different device than before:** Since 1.2.0 they are grouped across the controller plus **Controls**, **Sensors**, **Pumps**, **Configuration** and **Diagnostics**. Entity IDs do not change, so automations keep working — only the device page an entity is filed under differs.
 * **Values still show as "Unknown" after upgrading from 1.1.x:** The *System:* sensors used to be registered as disabled. Entities that already exist keep the state they were created with, so enable them once under **Settings → Devices & Services → Entities** if you want to see them.
 * **Setting the comfort temperature has no effect at the top of the range:** The setpoint range defaults to 10–90 °C. Verify the permitted range for your application in the controller and adjust `min`/`max` in `const.py` if it differs.
 
@@ -206,9 +229,12 @@ The language is automatically selected based on your Home Assistant user profile
 
 | File | Responsibility |
 | --- | --- |
-| `__init__.py` | Entry setup, the three coordinators, and the device registry entry. |
+| `__init__.py` | Entry setup, the three coordinators, and the controller and group devices. |
 | `device.py` | Everything that knows the controller's registers. No Home Assistant imports, so it is testable against a mock bus. |
-| `const.py` | The declarative register and entity map. |
+| `const.py` | The declarative register and entity map, including which device each entity belongs on. |
 | `sensor.py` / `number.py` | The entities. |
 | `config_flow.py` | Setup and reconfigure flows. |
 | `brand/` | The integration's own icon and logo. Home Assistant reads these directly, so no entry in the brands repository is needed. |
+| `info.md` | The short summary HACS can show instead of this README. |
+
+> **`info.md` versus this README.** HACS only renders `info.md` when `render_readme` is `false` in `hacs.json`. This repository currently sets `render_readme: true`, so HACS shows this README and `info.md` stays unused — flip that flag to `false` if you would rather HACS show the shorter summary.

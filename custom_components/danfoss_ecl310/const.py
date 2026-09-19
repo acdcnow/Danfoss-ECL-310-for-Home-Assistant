@@ -42,6 +42,7 @@ Sensor configuration keys
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any, Final
 
 from homeassistant.components.sensor import SensorDeviceClass
@@ -66,6 +67,57 @@ DEFAULT_INTERVAL_SETTINGS: Final = 600
 
 #: Ceiling for a single block read, below the protocol limit of 125 registers.
 MAX_BLOCK_LENGTH: Final = 100
+
+
+# --- Entity grouping ------------------------------------------------------------
+# The entities are spread over several devices: one for the controller itself and
+# a child device per group. Home Assistant 2026.9 child devices are exactly this -
+# a lightweight logical part of a parent device - so the groups nest under the
+# controller in the interface rather than showing up as unrelated devices.
+GROUP_CONTROLS: Final = "controls"
+GROUP_SENSORS: Final = "sensors"
+GROUP_PUMPS: Final = "pumps"
+GROUP_CONFIGURATION: Final = "configuration"
+GROUP_DIAGNOSTICS: Final = "diagnostics"
+
+#: Display names of the child devices, in the order they are created.
+GROUP_NAMES: Final[dict[str, str]] = {
+    GROUP_CONTROLS: "Controls",
+    GROUP_SENSORS: "Sensors",
+    GROUP_PUMPS: "Pumps",
+    GROUP_CONFIGURATION: "Configuration",
+    GROUP_DIAGNOSTICS: "Diagnostics",
+}
+
+GROUPS: Final[tuple[str, ...]] = tuple(GROUP_NAMES)
+
+#: The pumps are read alongside the rest of the status registers but get a device
+#: of their own, so they are called out by key.
+PUMP_KEYS: Final[frozenset[str]] = frozenset(
+    {
+        "pump_1",
+        "pump_2",
+        "pump_3",
+        "manual_pump_1",
+        "manual_pump_2",
+        "manual_pump_3",
+    }
+)
+
+
+def device_group_for_sensor(config: Mapping[str, Any]) -> str:
+    """Return which device a read-only entity belongs on.
+
+    Pumps have a device of their own. Diagnostic entities - the limits, the
+    setpoint read-backs and the system information - are kept together so they
+    can be tucked away. Everything else is a live reading and goes with the
+    sensors.
+    """
+    if config["key"] in PUMP_KEYS:
+        return GROUP_PUMPS
+    if config.get("entity_category") is EntityCategory.DIAGNOSTIC:
+        return GROUP_DIAGNOSTICS
+    return GROUP_SENSORS
 
 
 # --- Status and operating modes -------------------------------------------------
