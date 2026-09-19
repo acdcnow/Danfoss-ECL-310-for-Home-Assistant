@@ -2,7 +2,9 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![Maintainer](https://img.shields.io/badge/maintainer-acdcnow-blue)](https://github.com/acdcnow)
-[![Version](https://img.shields.io/badge/version-1.2.0-green)]()
+[![Version](https://img.shields.io/badge/version-1.2.0--beta.2-green)]()
+
+![Danfoss ECL 310](custom_components/danfoss_ecl310/brand/logo.png)
 
 This is a custom integration for **Home Assistant** to monitor and control **Danfoss ECL310** district heating controllers via **Modbus TCP**.
 Using Application 247.1 (V01)
@@ -16,9 +18,9 @@ It supports reading temperatures, pump/valve statuses, and operating modes, as w
 
 The controller is always addressed on Modbus unit **254**, which is fixed by Danfoss for application 247.1 and therefore is not asked for during setup.
 
-## 🧪 Pre-release: v1.2.0-beta.1
+## 🧪 Pre-release: v1.2.0-beta.2
 
-This branch is published as the GitHub **pre-release** `v1.2.0-beta.1`. It is a testing build: see the [release notes](https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/releases/tag/v1.2.0-beta.1) for the full changelog and what is worth checking.
+This branch is published as the GitHub **pre-release** `v1.2.0-beta.2`. It is a testing build: see the [release notes](https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/releases/tag/v1.2.0-beta.2) for the full changelog and what is worth checking.
 
 > **⚠️ Home Assistant 2026.9 or newer is required.** The integration now reads the controller through Home Assistant's own Modbus integration (`async_get_unit`, introduced in 2026.9) instead of opening its own socket. On an older Home Assistant the integration will not load at all.
 
@@ -27,11 +29,11 @@ This branch is published as the GitHub **pre-release** `v1.2.0-beta.1`. It is a 
 HACS hides pre-releases unless you have opted into beta versions, so the most reliable route is a manual install:
 
 1. Download the archive for the tag:
-   `https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/archive/refs/tags/v1.2.0-beta.1.zip`
+   `https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/archive/refs/tags/v1.2.0-beta.2.zip`
 2. Unzip it and replace your existing `config/custom_components/danfoss_ecl310/` folder with the `custom_components/danfoss_ecl310/` folder from the archive.
 3. Restart Home Assistant.
 
-If you would rather stay inside HACS, enable pre-release/beta versions in the HACS settings and redownload the integration — HACS will then offer `v1.2.0-beta.1`.
+If you would rather stay inside HACS, enable pre-release/beta versions in the HACS settings and redownload the integration — HACS will then offer `v1.2.0-beta.2`.
 
 ### Rolling back
 
@@ -209,3 +211,4 @@ The language is automatically selected based on your Home Assistant user profile
 | `const.py` | The declarative register and entity map. |
 | `sensor.py` / `number.py` | The entities. |
 | `config_flow.py` | Setup and reconfigure flows. |
+| `brand/` | The integration's own icon and logo. Home Assistant reads these directly, so no entry in the brands repository is needed. |
