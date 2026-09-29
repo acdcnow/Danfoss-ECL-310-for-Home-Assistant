@@ -2,7 +2,7 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![Maintainer](https://img.shields.io/badge/maintainer-acdcnow-blue)](https://github.com/acdcnow)
-[![Version](https://img.shields.io/badge/version-1.2.0-green)]()
+[![Version](https://img.shields.io/badge/version-1.2.1-green)]()
 
 ![Danfoss ECL 310](custom_components/danfoss_ecl310/brand/logo.png)
 
@@ -148,15 +148,16 @@ A ready-to-use Lovelace dashboard is included, built for the 2026.9 **sections**
 ![Expert view](dashboards/preview/screenshot-expert.jpg)
 
 The dashboard uses **built-in Home Assistant cards only** - no `card-mod`, no extra theme, no custom
-CSS - and every value it shows comes from registers this integration already reads. The single HACS
-requirement is [plotly-graph-card](https://github.com/dbuezas/lovelace-plotly-graph-card) for the
-heating curve.
+CSS - and every value it shows comes from registers this integration already reads. It needs **no
+template sensors**, so a missing helper cannot leave you with empty cards: the single helper it
+requires is the view switch. The only HACS requirement is
+[plotly-graph-card](https://github.com/dbuezas/lovelace-plotly-graph-card) for the heating curve.
 
 Two files are involved:
 
 | File | What it is |
 | --- | --- |
-| `dashboards/ecl310-helpers.yaml` | The helpers the dashboard needs: `input_boolean.expert_mode` (the view switch) plus three template entities - operating status, flow control deviation and a sensor-fault flag - which no Lovelace card can calculate on its own. Install it as a package. |
+| `dashboards/ecl310-helpers.yaml` | The **one** helper the dashboard needs: `input_boolean.expert_mode`, the switch between the two views. No integration can create an `input_boolean`, and Lovelace cannot switch a view on something it cannot see. Install it as a package. |
 | `dashboards/ecl310-dashboard.yaml` | The dashboard itself. |
 
 **[→ Dashboard install guide](dashboards/README.md)** (3 steps: match the entity ids, install `dashboards/ecl310-helpers.yaml` as a package, paste `dashboards/ecl310-dashboard.yaml` into a dashboard).

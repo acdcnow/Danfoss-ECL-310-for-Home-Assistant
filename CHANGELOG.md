@@ -4,6 +4,34 @@ All notable changes to this integration are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project uses
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-09-29
+
+### Fixed
+
+- **The dashboard no longer needs helper entities.** It used to read three template sensors
+  (`sensor.heizung_betriebsstatus`, `sensor.heizung_regelabweichung`,
+  `binary_sensor.heizung_sensorstoerung`) from `dashboards/ecl310-helpers.yaml`. If that package was
+  not installed - which is easy to miss - those cards showed *entity not available* instead of the
+  dashboard. The operating state now comes from the integration's own mode entities, the warning cards
+  are plain `state: unavailable` conditions and the trend tile shows the flow temperature, so nothing
+  on the dashboard depends on a template any more.
+- `sensor.ecl310_mode_manual_pump_p1` was addressed as `..._mode_manual_pump_1` in the dashboard and
+  in its preview, so that row was silently dropped.
+
+### Changed
+
+- `dashboards/ecl310-helpers.yaml` now contains only `input_boolean.expert_mode` - the one thing an
+  integration cannot create and Lovelace cannot work without. If you installed the previous version,
+  the three template sensors can be deleted (the dashboard no longer reads them).
+- The dashboard's header banner was removed; the badges carry the same live values.
+- `dashboards/README.md` now explains the difference between *entity not available*, *unknown* and
+  *unavailable* - the second one means the controller did not answer that register.
+
+### Notes
+
+- The summer-cutout banner went away with the template sensors. While the controller is off for the
+  summer, the operating mode tile shows **Standby**.
+
 ## [1.2.0] - 2026-09-29
 
 The transport layer was rewritten: the controller is no longer read through the integration's own

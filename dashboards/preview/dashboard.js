@@ -90,10 +90,6 @@
     "sensor.ecl310_application_key": ["ECL310-3.0", { n: "Application Key", icon: "key-variant", lc: 4320 }],
     "sensor.ecl310_modbus_addr": ["254", { n: "Modbus Addr", icon: "network", lc: 4320 }],
 
-    /* --- Abgeleitete Sensoren aus dem HA-Paket --- */
-    "sensor.heizung_betriebsstatus": ["Heizbetrieb Komfort", { n: "Heizung Betriebsstatus", icon: "radiator", lc: 190 }],
-    "sensor.heizung_regelabweichung": ["-1.8", { n: "Heizung Regelabweichung", u: "K", p: 1, dc: "temperature", icon: "scale-balance", lc: 1 }],
-    "binary_sensor.heizung_sensorstoerung": ["off", { n: "Heizung Sensorstörung", icon: "alert-circle-outline", lc: 2880 }],
   };
 
   /* State translations of the danfoss_ecl310 integration (de.json) */
@@ -277,47 +273,6 @@
   const visible = (list) => !list || list.every(conditionMet);
 
   /* ==========================================================================
-     3b. Derived entities - templates from heizung-package.yaml
-     --------------------------------------------------------------------------
-     The two simple templates are evaluated by the mini Jinja above, the enum
-     status sensor mirrors its Jinja state template in statusRule().
-     ========================================================================== */
-  const PKG = {
-    deviation:
-      "{{ (states('sensor.ecl310_temp_flow_s3') | float(0) -\n" +
-      "    states('sensor.ecl310_temp_flow_target_calc') | float(0)) | round(1) }}",
-    deviationAvailable:
-      "{{ has_value('sensor.ecl310_temp_flow_s3') and has_value('sensor.ecl310_temp_flow_target_calc') }}",
-    fault:
-      "{{ not (has_value('sensor.ecl310_temp_outdoor_s1')\n" +
-      "        and has_value('sensor.ecl310_temp_flow_s3')\n" +
-      "        and has_value('sensor.ecl310_temp_flow_target_calc')) }}",
-  };
-
-  /** Mirrors the state template of "Heizung Betriebsstatus". */
-  function statusRule() {
-    const mode = raw("sensor.ecl310_mode_heating");
-    const outdoor = T.F("sensor.ecl310_temp_outdoor_s1", -99);
-    const cutout = T.F("sensor.ecl310_limit_summer_cutout", 99);
-    if (!T.HV("sensor.ecl310_mode_heating") || !T.HV("sensor.ecl310_temp_outdoor_s1")) return "Datenfehler";
-    if (mode === "4") return "Frostschutz";
-    if (outdoor >= cutout) return "Sommerabschaltung";
-    if (mode === "2") return "Heizbetrieb Komfort";
-    if (mode === "3") return "Absenkbetrieb";
-    if (mode === "1") return "Zeitprogramm";
-    if (mode === "5") return "Handbetrieb";
-    return "Standby";
-  }
-
-  /** Re-evaluates the package templates, exactly like Home Assistant would. */
-  function recompute() {
-    const available = !!renderTemplate(PKG.deviationAvailable);
-    S["sensor.heizung_regelabweichung"].state = available ? String(renderTemplate(PKG.deviation)) : "unavailable";
-    S["binary_sensor.heizung_sensorstoerung"].state = renderTemplate(PKG.fault) ? "on" : "off";
-    S["sensor.heizung_betriebsstatus"].state = statusRule();
-  }
-
-  /* ==========================================================================
      4. Generated history (realistic, deterministic, ends at the live value)
      ========================================================================== */
   const OUT = (h) => 4.3 + 3.8 * Math.sin((2 * Math.PI * h) / 24) + 1.0 * Math.sin((2 * Math.PI * h) / 7.5) + 0.5 * Math.sin((2 * Math.PI * h) / 3.1);
@@ -332,7 +287,6 @@
     "sensor.ecl310_temp_flow_s3": FLW,
     "sensor.ecl310_temp_flow_target_calc": TGT,
     "sensor.ecl310_temp_dhw_s4": DHW,
-    "sensor.heizung_regelabweichung": DEV,
   };
 
   function generic(h) {
@@ -940,23 +894,13 @@
   const DASHBOARD = {
     title: "Heizung H.P.S.",
     subtitle: "Fussbodenheizung · Danfoss ECL 310 · Modbus TCP",
-    headerCard: {
-      type: "markdown",
-      text_only: true,
-      content:
-        "**{{ states('sensor.heizung_betriebsstatus') }}** &nbsp;·&nbsp; " +
-        "Außen {{ states('sensor.ecl310_temp_outdoor_s1') if has_value('sensor.ecl310_temp_outdoor_s1') else '–' }} °C · " +
-        "Vorlauf {{ states('sensor.ecl310_temp_flow_s3') if has_value('sensor.ecl310_temp_flow_s3') else '–' }} °C / " +
-        "Soll {{ states('sensor.ecl310_temp_flow_target_calc') if has_value('sensor.ecl310_temp_flow_target_calc') else '–' }} °C",
-    },
     badges: [
       { type: "entity", entity: "input_boolean.expert_mode", name: "Expert", icon: "mdi:account-hard-hat", color: "deep-purple", show_name: true, show_state: false, visibility: STANDARD },
       { type: "entity", entity: "input_boolean.expert_mode", name: "Standard", icon: "mdi:eye-outline", color: "blue", show_name: true, show_state: false, visibility: EXPERT },
-      { type: "entity", entity: "sensor.heizung_betriebsstatus", name: "Betrieb", color: "green", show_name: true, show_state: true },
+      { type: "entity", entity: "sensor.ecl310_mode_heating", name: "Heizkreis", color: "green", show_name: true, show_state: true },
       { type: "entity", entity: "sensor.ecl310_temp_outdoor_s1", name: "Außen", color: "cyan", show_name: true, show_state: true },
       { type: "entity", entity: "sensor.ecl310_temp_flow_s3", name: "Vorlauf", color: "deep-orange", show_name: true, show_state: true },
       { type: "entity", entity: "sensor.ecl310_temp_dhw_s4", name: "Warmwasser", color: "red", show_name: true, show_state: true },
-      { type: "entity", entity: "binary_sensor.heizung_sensorstoerung", name: "Störung", color: "red", show_name: true, show_state: false, visibility: [{ condition: "state", entity: "binary_sensor.heizung_sensorstoerung", state: "on" }] },
     ],
     sections: [
       /* ---- 1) Plant overview ---- */
@@ -966,8 +910,8 @@
           {
             type: "heading", heading: "Anlagenübersicht", icon: "mdi:home-thermometer",
             badges: [
-              { type: "entity", entity: "sensor.heizung_betriebsstatus", color: "state", show_state: true },
-              { type: "entity", entity: "binary_sensor.heizung_sensorstoerung", show_name: true, color: "red", visibility: [{ condition: "state", entity: "binary_sensor.heizung_sensorstoerung", state: "on" }] },
+              { type: "entity", entity: "sensor.ecl310_mode_heating", color: "state", show_state: true },
+              { type: "entity", entity: "sensor.ecl310_mode_dhw", color: "state", show_state: true },
             ],
           },
           {
@@ -975,7 +919,7 @@
               { type: "tile", entity: "sensor.ecl310_temp_outdoor_s1", name: "Außen (S1)", color: "cyan", features: [{ type: "bar-gauge", min: -20, max: 40 }] },
               { type: "tile", entity: "sensor.ecl310_temp_flow_s3", name: "Vorlauf Ist (S3)", color: "deep-orange", features: [{ type: "bar-gauge", min: 0, max: 90 }] },
               { type: "tile", entity: "sensor.ecl310_temp_flow_target_calc", name: "Vorlauf Soll (berechnet)", icon: "mdi:thermostat-auto", color: "amber", features: [{ type: "bar-gauge", min: 0, max: 90 }] },
-              { type: "tile", entity: "sensor.heizung_regelabweichung", name: "Regelabweichung", icon: "mdi:scale-balance", color: "purple", features: [{ type: "trend-graph", hours_to_show: 24 }] },
+              { type: "tile", entity: "sensor.ecl310_temp_flow_s3", name: "Vorlauf-Verlauf (24 h)", icon: "mdi:chart-timeline-variant", color: "deep-orange", features: [{ type: "trend-graph", hours_to_show: 24 }] },
               { type: "tile", entity: "sensor.ecl310_temp_room_s2", name: "Nutzwasser (S2)", color: "teal", features: [{ type: "bar-gauge", min: 0, max: 90 }] },
               { type: "tile", entity: "sensor.ecl310_temp_dhw_s4", name: "Warmwasser (S4)", color: "red", features: [{ type: "bar-gauge", min: 0, max: 90 }] },
             ],
@@ -1019,19 +963,18 @@
         column_span: 2,
         cards: [
           { type: "heading", heading: "Betrieb & Meldungen", icon: "mdi:bell-ring-outline" },
-          { type: "tile", entity: "sensor.heizung_betriebsstatus", name: "Betriebsstatus", icon: "mdi:radiator", vertical: false },
-          {
-            type: "conditional", conditions: [{ condition: "state", entity: "binary_sensor.heizung_sensorstoerung", state: "on" }],
-            card: { type: "markdown", content: "### ⚠️ Sensorstörung\nMindestens ein Temperaturwert fehlt oder ist nicht verfügbar (Außen S1, Vorlauf S3 oder Vorlauf-Soll)." },
-          },
+          { type: "tile", entity: "sensor.ecl310_mode_heating", name: "Betriebsart Heizkreis", icon: "mdi:radiator", vertical: false },
           {
             type: "conditional", conditions: [{ condition: "state", entity: "sensor.ecl310_mode_heating", state: "4" }],
             card: { type: "markdown", content: "### ❄️ Frostschutz aktiv\nDie Anlage hält nur noch die Mindesttemperatur." },
           },
           {
-            type: "conditional",
-            conditions: [{ condition: "template", value_template: "{{ states('sensor.ecl310_temp_outdoor_s1') | float(-99) >= states('sensor.ecl310_limit_summer_cutout') | float(99) }}" }],
-            card: { type: "markdown", content: "### ☀️ Sommerabschaltung\nDie Außentemperatur liegt über dem Sommer-Grenzwert, die Heizung ist aus (Warmwasser läuft weiter)." },
+            type: "conditional", conditions: [{ condition: "state", entity: "sensor.ecl310_temp_outdoor_s1", state: "unavailable" }],
+            card: { type: "markdown", content: "### ⚠️ Außenfühler S1 nicht verfügbar\nOhne S1 kann die Heizkurve nicht rechnen und der Regler fährt auf einen Ersatzwert." },
+          },
+          {
+            type: "conditional", conditions: [{ condition: "state", entity: "sensor.ecl310_temp_flow_s3", state: "unavailable" }],
+            card: { type: "markdown", content: "### ⚠️ Vorlauffühler S3 nicht verfügbar\nDer Vorlauf ist der wichtigste Messwert der Regelung." },
           },
           {
             type: "grid", columns: 2, square: false, cards: [
@@ -1163,7 +1106,6 @@
      8. Render + wiring
      ========================================================================== */
   function render() {
-    recompute();
     const view = document.getElementById("view");
     const sections = DASHBOARD.sections.filter((s) => visible(s.visibility));
     view.innerHTML = `
@@ -1172,7 +1114,6 @@
           <h1>${esc(DASHBOARD.title)}</h1>
           <div class="subtitle">${esc(DASHBOARD.subtitle)}</div>
         </div>
-        ${DASHBOARD.headerCard ? `<div class="ha-header-card">${markdownCard(DASHBOARD.headerCard)}</div>` : ""}
         <div class="ha-badges">${DASHBOARD.badges.map(badge).join("")}</div>
       </div>
       <div class="ha-container">

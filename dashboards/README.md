@@ -19,7 +19,7 @@ Two views in one file, switched with a helper:
 | File | Purpose |
 | --- | --- |
 | `ecl310-dashboard.yaml` | the dashboard view - paste this into the dashboard |
-| `ecl310-helpers.yaml` | Home Assistant package: `input_boolean.expert_mode` + 3 template entities the dashboard reads (`sensor.heizung_betriebsstatus`, `sensor.heizung_regelabweichung`, `binary_sensor.heizung_sensorstoerung`) |
+| `ecl310-helpers.yaml` | Home Assistant package with the **one** helper the dashboard needs: `input_boolean.expert_mode`, the switch between the two views |
 | `preview/index.html` | offline preview of the dashboard - open it in a browser, no Home Assistant needed |
 | `preview/fetch_icons.py` | regenerates `preview/icons.js` (Material Design Icons used by the preview) |
 | `examples/legacy-vertical-stack-example.yaml` | the previous minimal example, kept for reference |
@@ -76,7 +76,7 @@ Every value the dashboard shows is read by the integration itself: the register 
 `custom_components/danfoss_ecl310/const.py` is the only source, and nothing beyond the three helpers
 in `ecl310-helpers.yaml` has to be added on top of it.
 
-### 1. Install the helpers
+### 1. Install the helper
 
 1. Copy `ecl310-helpers.yaml` to `<config>/packages/ecl310.yaml`
    (create the folder if it does not exist).
@@ -149,15 +149,28 @@ review, not as a pixel-perfect copy of Lovelace.
 | Card labels (they are German) | any `name:` in the cards |
 | Which temperatures are shown | swap the entities in the "Plant overview" grid |
 | Move the view switch to another helper | replace `input_boolean.expert_mode` in the two badges and in the three `visibility:` blocks |
-| Thresholds of the warnings (summer cutout, sensor fault) | `ecl310-helpers.yaml`, section *Derived values* |
+| The warning cards (frost protection, missing sensor) | the `conditional` cards in the *Operation & messages* section - they are plain `condition: state` tests, add your own |
 
-### Notes
+### When a card says “unknown”
+
+Two different things, and only one of them is a problem with the dashboard:
+
+| What you see | What it means | What to do |
+| --- | --- | --- |
+| **Entity not available** / *is not known* | The entity id does not exist in your Home Assistant. Usually the entity prefix does not match your install (see step 0), or the helper package is not installed. | Check the id under **Developer Tools → States**; a search for `ecl310` (or `sensors`, `controls`, …) shows what your install actually uses. |
+| **unknown** in the value | The entity exists, but the controller did not answer that register in the last poll. This happens for registers your application (247.1) does not implement - the summer cutout is a common one. | Nothing to fix in the dashboard. Enable debug logging (`custom_components.danfoss_ecl310: debug`, `modbus_connection: debug`) - the integration logs `Block read … failed` / `… register(s) did not answer this cycle` with the register names. |
+| **unavailable** | The integration could not reach the controller at all (poll failed). | Check the network/Modbus side; the warning cards for S1 and S3 use exactly this state, so they appear while the link is down. |
+
+## Notes
 
 * The setpoints are written through the `number.*` entities of the integration (the integration has
   no climate entity).
 * **No CSS is needed.** The dashboard is built from built-in cards only: there is no `card-mod`
   block, no custom theme and no extra stylesheet to install. `preview/dashboard.css` belongs to the
   preview page, not to the dashboard.
+* **No template sensors are needed** either - every value comes from the integration, so the only
+  helper is `input_boolean.expert_mode`. (Older versions of this guide installed three template
+  entities; the dashboard no longer uses them, you can delete them.)
 * The tile features `bar-gauge`, `trend-graph` and `numeric-input` and the section `visibility` are
   2026.9 features; on older Home Assistant the tiles fall back to plain cards without their gauges.
 * The `System:` sensors are **disabled by default** by the integration. Enable them once under
