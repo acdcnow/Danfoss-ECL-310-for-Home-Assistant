@@ -1125,7 +1125,7 @@
               { entity: "sensor.ecl310_m2_movement", name: "Mischer M2" },
               { entity: "sensor.ecl310_m3_movement", name: "Mischer M3" },
               { entity: "sensor.ecl310_mode_manual_valve_m1", name: "Handbetrieb Ventil M1" },
-              { entity: "sensor.ecl310_mode_manual_pump_1", name: "Handbetrieb Pumpe P1" },
+              { entity: "sensor.ecl310_mode_manual_pump_p1", name: "Handbetrieb Pumpe P1" },
             ],
           },
         ],
