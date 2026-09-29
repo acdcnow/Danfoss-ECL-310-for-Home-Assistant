@@ -62,7 +62,7 @@ The integration connects to the ECL310 using the `pymodbus` library. It sets up 
 
 ---
 
-## � Dashboard
+## 📊 Dashboard
 
 A ready-to-use Lovelace dashboard is included, built for the 2026.9 **sections** view:
 
@@ -79,7 +79,7 @@ Want to look first? Open [`dashboards/preview/index.html`](dashboards/preview/in
 
 ---
 
-## �🛠️ Advanced: Adjusting Sensors (`const.py`)
+## 🛠️ Advanced: Adjusting Sensors (`const.py`)
 
 This integration is designed to be easily extensible. All register mappings are defined in `const.py`. You do not need to touch the complex logic code to add a new sensor.
 
