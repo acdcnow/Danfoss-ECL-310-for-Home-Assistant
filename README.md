@@ -2,7 +2,7 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![Maintainer](https://img.shields.io/badge/maintainer-acdcnow-blue)](https://github.com/acdcnow)
-[![Version](https://img.shields.io/badge/version-1.2.0--beta.3-green)]()
+[![Version](https://img.shields.io/badge/version-1.2.0-green)]()
 
 ![Danfoss ECL 310](custom_components/danfoss_ecl310/brand/logo.png)
 
@@ -18,28 +18,31 @@ It supports reading temperatures, pump/valve statuses, and operating modes, as w
 
 The controller is always addressed on Modbus unit **254**, which is fixed by Danfoss for application 247.1 and therefore is not asked for during setup.
 
-## 🧪 Pre-release: v1.2.0-beta.3
+## 🚀 Version 1.2.0
 
-This branch is published as the GitHub **pre-release** `v1.2.0-beta.3`. It is a testing build: see the [release notes](https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/releases/tag/v1.2.0-beta.3) for the full changelog and what is worth checking.
+1.2.0 replaces the integration's own Modbus socket with Home Assistant's built-in **Modbus**
+integration. That is what makes it work on 2026.9+, lets other Modbus clients share the
+controller, and removes the pymodbus version juggling of 1.1.x. The full list is in
+[CHANGELOG.md](CHANGELOG.md) and in the [release notes](https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/releases/tag/v1.2.0).
 
-> **⚠️ Home Assistant 2026.9 or newer is required.** The integration now reads the controller through Home Assistant's own Modbus integration (`async_get_unit`, introduced in 2026.9) instead of opening its own socket. On an older Home Assistant the integration will not load at all.
+> **⚠️ Home Assistant 2026.9 or newer is required.** On an older Home Assistant the integration will not load at all.
 
-**What this build changes:** the controller's entities are now spread over five devices (see [Devices](#-devices)) instead of all sitting on one page. Entity IDs and unique IDs are untouched, so nothing has to be set up again — the entities simply appear under their new device.
+**What changed since 1.1.9**
 
-### Installing the test build
+| | |
+| --- | --- |
+| **Shared connection** | The controller is read through the Modbus integration (`async_get_unit`), so a second Modbus client on the same controller no longer competes for the one available session. |
+| **Five devices** | Entities are grouped onto **Controls**, **Sensors**, **Pumps**, **Configuration** and **Diagnostics** ([see below](#-devices)) instead of piling up on one page. |
+| **Batched polling** | Neighbouring registers are read as one Modbus block per group; the three intervals (status 30 s, temperature 60 s, settings 600 s) are adjustable at runtime. |
+| **Identity on the device page** | Serial number, firmware and hardware revision now reach the device registry - in 1.1.x the sensors holding them were registered as disabled and never ran. |
+| **Honest errors** | A rejected write raises a visible error instead of failing silently, and a controller that stops answering marks its entities unavailable. |
+| **Reconfigure** | The IP address can be changed from the integration's ⋮ menu without deleting and re-adding the entry. |
+| **Dashboard included** | A ready-to-use Lovelace dashboard ships in [`dashboards/`](dashboards) ([see below](#-dashboard)). |
 
-HACS hides pre-releases unless you have opted into beta versions, so the most reliable route is a manual install:
-
-1. Download the archive for the tag:
-   `https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/archive/refs/tags/v1.2.0-beta.3.zip`
-2. Unzip it and replace your existing `config/custom_components/danfoss_ecl310/` folder with the `custom_components/danfoss_ecl310/` folder from the archive.
-3. Restart Home Assistant.
-
-If you would rather stay inside HACS, enable pre-release/beta versions in the HACS settings and redownload the integration — HACS will then offer `v1.2.0-beta.3`.
-
-### Rolling back
-
-Entity IDs and unique IDs are unchanged, so reverting is safe: redownload **1.1.9** in HACS (or put the previous folder back) and restart Home Assistant. Your history, names and customisations are preserved.
+**Upgrading from 1.1.x is safe.** Entity IDs and unique IDs are stored the first time an entity is
+registered, so an existing install keeps exactly the IDs it has - only the device page an entity is
+filed under changes. Rolling back is equally safe: redownload **1.1.9** in HACS (or put the previous
+folder back) and restart Home Assistant.
 
 ### What is worth checking
 
@@ -136,9 +139,25 @@ A ready-to-use Lovelace dashboard is included, built for the 2026.9 **sections**
 * **Standard view** (`input_boolean.expert_mode = off`): the live temperatures as tiles with bar gauges, the setpoint sliders, a storage gauge, the operating states and a 72 h history.
 * **Expert view** (`input_boolean.expert_mode = on`): everything above **plus** the heating curve with the current operating point, all curve setpoints, the limits, valves/pumps and the maintenance/diagnostics section.
 
-![Dashboard](dashboards/preview/screenshot-standard.jpg)
+**Standard view**
 
-It is made of built-in Home Assistant cards - only the heating curve section uses the HACS card [plotly-graph-card](https://github.com/dbuezas/lovelace-plotly-graph-card).
+![Standard view](dashboards/preview/screenshot-standard.jpg)
+
+**Expert view** - the three sections the view switch reveals
+
+![Expert view](dashboards/preview/screenshot-expert.jpg)
+
+The dashboard uses **built-in Home Assistant cards only** - no `card-mod`, no extra theme, no custom
+CSS - and every value it shows comes from registers this integration already reads. The single HACS
+requirement is [plotly-graph-card](https://github.com/dbuezas/lovelace-plotly-graph-card) for the
+heating curve.
+
+Two files are involved:
+
+| File | What it is |
+| --- | --- |
+| `dashboards/ecl310-helpers.yaml` | The helpers the dashboard needs: `input_boolean.expert_mode` (the view switch) plus three template entities - operating status, flow control deviation and a sensor-fault flag - which no Lovelace card can calculate on its own. Install it as a package. |
+| `dashboards/ecl310-dashboard.yaml` | The dashboard itself. |
 
 **[→ Dashboard install guide](dashboards/README.md)** (3 steps: match the entity ids, install `dashboards/ecl310-helpers.yaml` as a package, paste `dashboards/ecl310-dashboard.yaml` into a dashboard).
 

@@ -12,6 +12,8 @@ Two views in one file, switched with a helper:
 
 ![Standard view](preview/screenshot-standard.jpg)
 
+![Expert view](preview/screenshot-expert.jpg)
+
 ## Files
 
 | File | Purpose |
@@ -33,15 +35,46 @@ Two views in one file, switched with a helper:
 
 ## Install
 
-### 0. Match the entity ids to your device
+### 0. Match the entity ids to the integration
 
-The entity ids in both files assume the integration was added with the device name
-**`ECL310`**, which produces ids like `sensor.ecl310_temp_flow_s3`.
+The dashboard addresses the entities of the integration, and how those ids look depends on whether
+your install is older or newer than 1.2.0:
 
-If your device is called differently (e.g. `ECL 1` → `sensor.ecl_1_temp_flow_s3`),
-replace every `ecl310` with your own slug in both YAML files - a plain
-find & replace in your editor is the safest way, because the files contain
-`°C` and `·` characters that PowerShell 5.1 mangles when it re-encodes a file.
+| Your install | Entity ids look like | What to do |
+| --- | --- | --- |
+| **Upgraded from 1.1.x** | `sensor.ecl310_temp_flow_s3`, `number.ecl310_set_target_comfort` | Nothing - both files already match. Entity ids are stored when an entity is first registered and never change, so an upgraded install keeps the ids it had. |
+| **Fresh 1.2.0 install** | `sensor.sensors_temp_flow_s3`, `number.controls_set_target_comfort` | Replace the prefix in both YAML files (table below). |
+
+On a fresh install the entity id carries the **child device's name** (Home Assistant prefixes the
+device name for entities that use it), so the prefix is the group rather than the controller:
+
+| Device | Prefix | Entities the dashboard uses from it |
+| --- | --- | --- |
+| Controls | `controls_` | `set_target_comfort`, `set_target_setback`, `curve_slope` and the six `curve_*` inputs |
+| Sensors | `sensors_` | temperatures, operating modes, valve travel, movement, return and summer limits |
+| Pumps | `pumps_` | `mode_pump_p1..p3`, `mode_manual_pump_p1..p3` |
+| Configuration | `configuration_` | `interval_status`, `interval_temp` |
+| Diagnostics | `diagnostics_` | the limits, the setpoint read-backs and the system information |
+
+Two things to keep in mind while replacing:
+
+* Use a plain **find & replace in your editor**. PowerShell 5.1 re-encodes a file it rewrites and
+  mangles the `°C` and `·` characters these files contain.
+* Six entities were **renamed** in 1.2.0 as well (they moved to the *Diagnostics* device), so on a
+  fresh install their suffix differs too:
+
+  | Upgraded from 1.1.x | Fresh 1.2.0 install |
+  | --- | --- |
+  | `number.ecl310_interval_temp` | `number.configuration_interval_temperature` |
+  | `sensor.ecl310_serialnumber` | `sensor.diagnostics_system_serial_number` |
+  | `sensor.ecl310_application_key` | `sensor.diagnostics_system_application_key` |
+  | `sensor.ecl310_system_firmware` | `sensor.diagnostics_system_firmware` |
+  | `sensor.ecl310_hardware_revision` | `sensor.diagnostics_system_hardware_revision` |
+  | `sensor.ecl310_modbus_addr` | `sensor.diagnostics_system_modbus_address` |
+
+Every value the dashboard shows is read by the integration itself: the register map in
+`custom_components/danfoss_ecl310/const.py` is the only source, and nothing beyond the three helpers
+in `ecl310-helpers.yaml` has to be added on top of it.
 
 ### 1. Install the helpers
 
@@ -120,19 +153,13 @@ review, not as a pixel-perfect copy of Lovelace.
 
 ### Notes
 
-* The setpoints are written through the `number.*` entities of the integration.
-* If you switch to the **1.2.0 development line** of this integration, a few
-  diagnostic entity ids change and have to be updated in the expert sections:
-
-  | old (`main`) | new (`dev/v1.2.0`) |
-  | --- | --- |
-  | `number.ecl310_interval_temp` | `number.ecl310_interval_temperature` |
-  | `sensor.ecl310_serialnumber` | `sensor.ecl310_system_serial_number` |
-  | `sensor.ecl310_application_key` | `sensor.ecl310_system_application_key` |
-  | `sensor.ecl310_hardware_revision` | `sensor.ecl310_system_hardware_revision` |
-  | `sensor.ecl310_modbus_addr` | `sensor.ecl310_system_modbus_address` |
-
-* The three diagnostic sensors (`serialnumber`, `application_key`,
-  `hardware_revision`, `modbus_addr`) are disabled by default in the integration;
-  enable them in Settings → Devices & Services → the device → *Entities* if you
-  want the *Maintenance & diagnostics* section to show values.
+* The setpoints are written through the `number.*` entities of the integration (the integration has
+  no climate entity).
+* **No CSS is needed.** The dashboard is built from built-in cards only: there is no `card-mod`
+  block, no custom theme and no extra stylesheet to install. `preview/dashboard.css` belongs to the
+  preview page, not to the dashboard.
+* The tile features `bar-gauge`, `trend-graph` and `numeric-input` and the section `visibility` are
+  2026.9 features; on older Home Assistant the tiles fall back to plain cards without their gauges.
+* The `System:` sensors are **disabled by default** by the integration. Enable them once under
+  **Settings → Devices & Services → Entities** if you want the *Maintenance & diagnostics* section to
+  show a serial number, firmware and so on.
