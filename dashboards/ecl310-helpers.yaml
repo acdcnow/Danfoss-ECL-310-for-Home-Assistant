@@ -1,0 +1,97 @@
+# =============================================================================
+#  Danfoss ECL 310 - Home Assistant package
+#  Helpers and template entities used by dashboards/ecl310-dashboard.yaml.
+# -----------------------------------------------------------------------------
+#  Install
+#  -------
+#  1) copy this file to   <config>/packages/ecl310.yaml
+#  2) enable packages once in configuration.yaml:
+#
+#         homeassistant:
+#           packages: !include_dir_named packages
+#
+#  3) Developer Tools -> YAML -> check configuration -> restart Home Assistant
+#
+#  Replace the `ecl310` part of the entity ids if your device has another name
+#  (see dashboards/README.md).
+#
+#  input_boolean.expert_mode is the only thing the dashboard really needs:
+#      off  ->  standard view
+#      on   ->  expert view
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+#  View switch
+#  (deliberately without "initial:" so the state is restored after a restart)
+# -----------------------------------------------------------------------------
+input_boolean:
+  expert_mode:
+    name: Heizung Expertenmodus
+    icon: mdi:account-hard-hat
+
+# -----------------------------------------------------------------------------
+#  Derived values used by the dashboard
+# -----------------------------------------------------------------------------
+template:
+  - sensor:
+      # Human readable operating state (tile/markdown cards cannot calculate)
+      - name: Heizung Betriebsstatus
+        unique_id: heizung_betriebsstatus
+        icon: mdi:radiator
+        device_class: enum
+        options:
+          - Datenfehler
+          - Frostschutz
+          - Sommerabschaltung
+          - Heizbetrieb Komfort
+          - Absenkbetrieb
+          - Zeitprogramm
+          - Handbetrieb
+          - Standby
+        state: >-
+          {% set mode = states('sensor.ecl310_mode_heating') %}
+          {% set outdoor = states('sensor.ecl310_temp_outdoor_s1') | float(-99) %}
+          {% set cutout = states('sensor.ecl310_limit_summer_cutout') | float(99) %}
+          {% if not has_value('sensor.ecl310_mode_heating') or not has_value('sensor.ecl310_temp_outdoor_s1') %}
+            Datenfehler
+          {% elif mode == '4' %}
+            Frostschutz
+          {% elif outdoor >= cutout %}
+            Sommerabschaltung
+          {% elif mode == '2' %}
+            Heizbetrieb Komfort
+          {% elif mode == '3' %}
+            Absenkbetrieb
+          {% elif mode == '1' %}
+            Zeitprogramm
+          {% elif mode == '5' %}
+            Handbetrieb
+          {% else %}
+            Standby
+          {% endif %}
+
+      # Flow control deviation: actual - target (sign = direction of correction)
+      - name: Heizung Regelabweichung
+        unique_id: heizung_regelabweichung
+        icon: mdi:scale-balance
+        unit_of_measurement: K
+        device_class: temperature
+        state_class: measurement
+        suggested_display_precision: 1
+        availability: >-
+          {{ has_value('sensor.ecl310_temp_flow_s3') and
+             has_value('sensor.ecl310_temp_flow_target_calc') }}
+        state: >-
+          {{ (states('sensor.ecl310_temp_flow_s3') | float(0) -
+              states('sensor.ecl310_temp_flow_target_calc') | float(0)) | round(1) }}
+
+  - binary_sensor:
+      # Raised while a measurement that the controller logic depends on is missing
+      - name: Heizung Sensorstörung
+        unique_id: heizung_sensorstoerung
+        icon: mdi:alert-circle-outline
+        device_class: problem
+        state: >-
+          {{ not (has_value('sensor.ecl310_temp_outdoor_s1')
+                  and has_value('sensor.ecl310_temp_flow_s3')
+                  and has_value('sensor.ecl310_temp_flow_target_calc')) }}

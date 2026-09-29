@@ -1,0 +1,571 @@
+/* =============================================================================
+   Heizung H.P.S. - dashboard simulation
+   Stylesheet only. Colours are the real Home Assistant default-theme tokens,
+   so the preview matches what Lovelace renders (light + dark).
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* ---- Home Assistant default (light) theme ---- */
+  --primary-background-color: #eef1f5;
+  --card-background-color: #ffffff;
+  --secondary-background-color: #e5e5e5;
+  --primary-text-color: #212121;
+  --secondary-text-color: #727272;
+  --disabled-text-color: #bdbdbd;
+  --divider-color: #e0e0e0;
+  --primary-color: #03a9f4;
+  --accent-color: #ff9800;
+  --state-icon-color: #44739e;
+  --state-inactive-color: #bdbdbd;
+
+  --success-color: #4caf50;
+  --warning-color: #ff9800;
+  --error-color: #f44336;
+  --info-color: #039be5;
+
+  --red-color: #f44336;
+  --pink-color: #e91e63;
+  --purple-color: #9c27b0;
+  --deep-purple-color: #673ab7;
+  --indigo-color: #3f51b5;
+  --blue-color: #2196f3;
+  --light-blue-color: #03a9f4;
+  --cyan-color: #00bcd4;
+  --teal-color: #009688;
+  --green-color: #4caf50;
+  --light-green-color: #8bc34a;
+  --lime-color: #cddc39;
+  --yellow-color: #ffeb3b;
+  --amber-color: #ffc107;
+  --orange-color: #ff9800;
+  --deep-orange-color: #ff5722;
+  --brown-color: #795548;
+  --grey-color: #9e9e9e;
+  --blue-grey-color: #607d8b;
+
+  --ha-card-border-radius: 12px;
+  --ha-card-border-width: 1px;
+  --ha-card-box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+
+  --ha-font-size-s: 0.75rem;
+  --ha-font-size-m: 0.875rem;
+  --ha-font-size-l: 1rem;
+
+  --row-height: 56px;
+  --column-gap: 32px;
+  --row-gap: 24px;
+  --ha-space-2: 8px;
+  --ha-space-3: 12px;
+  --ha-space-4: 16px;
+
+  --feature-height: 8px;
+  --feature-border-radius: 4px;
+}
+
+body.dark {
+  color-scheme: dark;
+
+  --primary-background-color: #111111;
+  --card-background-color: #1c1c1c;
+  --secondary-background-color: #282828;
+  --primary-text-color: #e1e1e1;
+  --secondary-text-color: #9b9b9b;
+  --disabled-text-color: #6f6f6f;
+  --divider-color: #383838;
+  --primary-color: #039be5;
+  --state-icon-color: #44739e;
+  --state-inactive-color: #6f6f6f;
+  --ha-card-box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--primary-background-color);
+  color: var(--primary-text-color);
+  font-family: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* =============================================================================
+   Simulation harness bar (NOT part of Home Assistant)
+   ========================================================================== */
+.harness {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 10px 20px;
+  background: #101418;
+  color: #e1e1e1;
+  border-bottom: 1px solid #2b3238;
+  font-size: 0.8rem;
+}
+
+.harness .brand { font-weight: 600; letter-spacing: 0.2px; }
+.harness .brand span { color: #7f8b96; font-weight: 400; margin-left: 8px; }
+.harness .spacer { flex: 1; }
+
+.seg {
+  display: inline-flex;
+  background: #1b2126;
+  border: 1px solid #2b3238;
+  border-radius: 999px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.seg button {
+  appearance: none;
+  border: 0;
+  background: none;
+  color: #b6c0c8;
+  font: inherit;
+  padding: 6px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.seg button.active { background: var(--primary-color); color: #fff; font-weight: 600; }
+
+.harness .btn {
+  appearance: none;
+  border: 1px solid #2b3238;
+  background: #1b2126;
+  color: #b6c0c8;
+  font: inherit;
+  padding: 7px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.harness .hint { color: #7f8b96; }
+.harness .hint b { color: #b6c0c8; font-weight: 600; }
+
+/* =============================================================================
+   Lovelace sections view
+   ========================================================================== */
+.ha-view {
+  margin: 0 auto;
+  padding: 0 var(--column-gap) 48px;
+  max-width: calc(4 * 500px + 3 * var(--column-gap) + 2 * var(--column-gap));
+}
+
+.ha-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: var(--row-gap);
+}
+
+.ha-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.ha-header .subtitle { color: var(--secondary-text-color); font-size: 0.9rem; }
+
+.ha-header-card { color: var(--primary-text-color); font-size: 0.875rem; }
+
+.ha-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 18px;
+  background: var(--card-background-color);
+  border: 1px solid var(--divider-color);
+  color: var(--primary-text-color);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.badge .badge-label { color: var(--primary-text-color); }
+.badge .badge-state { color: var(--secondary-text-color); }
+
+.ha-container {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--row-gap) var(--column-gap);
+  align-items: start;
+  padding: var(--row-gap) 0;
+}
+
+.ha-section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.ha-section > * { width: 100%; }
+
+/* column_span of a section (clamped by the media queries below) */
+.sp-1 { grid-column: span 1; }
+.sp-2 { grid-column: span 2; }
+.sp-3 { grid-column: span 3; }
+.sp-4 { grid-column: span 4; }
+
+/* =============================================================================
+   Generic card
+   ========================================================================== */
+.ha-card {
+  background: var(--card-background-color);
+  border-radius: var(--ha-card-border-radius);
+  box-shadow: var(--ha-card-box-shadow);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.ha-card.unknown {
+  padding: 16px;
+  color: var(--secondary-text-color);
+  border: 1px dashed var(--divider-color);
+}
+
+/* ---- heading card ---- */
+.heading-card {
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  overflow: visible;
+  padding: 0 4px;
+}
+
+.heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 24px;
+}
+
+.heading-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--primary-text-color);
+  font-size: var(--ha-font-size-l);
+  font-weight: 400;
+}
+
+.heading-title p {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.heading-title.subtitle {
+  color: var(--secondary-text-color);
+  font-size: var(--ha-font-size-m);
+  font-weight: 500;
+}
+
+.heading-badges { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
+
+.h-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 12px;
+  background: var(--secondary-background-color);
+  color: var(--secondary-text-color);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* ---- tile card ---- */
+.tile { display: flex; flex-direction: column; height: 100%; }
+
+.tile-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  min-height: var(--row-height);
+  flex: 1;
+  min-width: 0;
+}
+
+.tile.vertical .tile-content {
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  padding: 10px 8px;
+}
+
+.tile-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 18px;
+}
+
+.tile-icon svg { width: 24px; height: 24px; }
+
+.tile-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  min-width: 0;
+  gap: 1px;
+}
+
+.tile.vertical .tile-info { align-items: center; }
+
+.tile-name,
+.tile-state {
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tile-name { font-size: var(--ha-font-size-m); font-weight: 500; color: var(--primary-text-color); }
+.tile-state { font-size: var(--ha-font-size-s); color: var(--primary-text-color); }
+.tile.vertical .tile-name, .tile.vertical .tile-state { text-align: center; }
+
+.tile-features {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 var(--ha-space-3) var(--ha-space-3);
+}
+
+/* ---- card features ---- */
+.feature { width: 100%; }
+
+.feature.bar-gauge {
+  position: relative;
+  display: flex;
+  height: var(--feature-height);
+  border-radius: var(--feature-border-radius);
+  overflow: hidden;
+}
+
+.feature.bar-gauge .bg {
+  flex: 1;
+  background: var(--feature-color, var(--primary-color));
+  opacity: 0.2;
+}
+
+.feature.bar-gauge .fill {
+  background: var(--feature-color, var(--primary-color));
+  border-radius: var(--feature-border-radius);
+  transition: width 180ms ease-in-out;
+}
+
+.feature.trend svg { display: block; width: 100%; height: 40px; }
+
+.feature.slider { display: flex; align-items: center; gap: 8px; height: 40px; }
+
+.feature.slider .np {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 50%;
+  border: 0;
+  background: var(--secondary-background-color);
+  color: var(--primary-text-color);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: default;
+}
+
+.feature.slider .track {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--secondary-background-color);
+  overflow: hidden;
+  padding: 0 12px;
+}
+
+.feature.slider .track .fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--feature-color, var(--primary-color));
+  opacity: 0.35;
+}
+
+.feature.slider .track .thumb {
+  position: absolute;
+  top: 50%;
+  width: 4px;
+  height: 22px;
+  border-radius: 2px;
+  transform: translate(-50%, -50%);
+  background: var(--feature-color, var(--primary-color));
+}
+
+.feature.slider .value {
+  position: relative;
+  font-size: var(--ha-font-size-m);
+  color: var(--primary-text-color);
+  white-space: nowrap;
+}
+
+/* ---- entities card ---- */
+.entities-card .card-header {
+  padding: var(--ha-space-4) var(--ha-space-4) 4px;
+  font-size: var(--ha-font-size-l);
+  font-weight: 500;
+}
+
+.entity-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ha-space-4);
+  padding: 0 var(--ha-space-4);
+  min-height: 40px;
+}
+
+.entity-row .icon { width: 24px; height: 24px; flex: none; }
+
+.entity-row .info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.entity-row .name {
+  font-size: var(--ha-font-size-m);
+  color: var(--primary-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.entity-row .secondary { font-size: var(--ha-font-size-s); color: var(--secondary-text-color); }
+
+.entity-row .state {
+  font-size: var(--ha-font-size-m);
+  color: var(--primary-text-color);
+  white-space: nowrap;
+}
+
+.entity-row .slider { display: flex; align-items: center; gap: 10px; }
+
+.entity-row .slider .rail {
+  position: relative;
+  width: 110px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--secondary-background-color);
+}
+
+.entity-row .slider .rail .fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--state-icon-color);
+}
+
+.entity-row .slider .rail .thumb {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--state-icon-color);
+  box-shadow: 0 0 0 3px var(--card-background-color);
+}
+
+.row-divider { height: 1px; margin: 8px var(--ha-space-4); background: var(--divider-color); }
+.row-section { padding: 8px var(--ha-space-4) 4px; font-size: var(--ha-font-size-m); color: var(--secondary-text-color); }
+
+/* ---- gauge card ---- */
+.gauge-card { padding: 8px 0 16px; display: flex; flex-direction: column; align-items: center; }
+.gauge-card svg { display: block; width: 100%; max-width: 240px; height: auto; }
+
+/* ---- charts ---- */
+.chart-card { padding: 8px 0 12px; }
+.chart-card .chart-title { padding: 8px var(--ha-space-4) 0; font-size: var(--ha-font-size-l); font-weight: 500; }
+.chart-card svg.chart { display: block; width: 100%; height: auto; }
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 16px;
+  padding: 4px var(--ha-space-4) 4px;
+}
+
+.chart-legend .item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--ha-font-size-s);
+  color: var(--primary-text-color);
+}
+
+.chart-legend .chip { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+
+/* ---- markdown card ---- */
+.markdown-card { padding: var(--ha-space-4); font-size: var(--ha-font-size-m); line-height: 1.5; }
+
+/* HA renders `text_only: true` markdown without the card container */
+.markdown-card.text-only {
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 4px 4px 0;
+  color: var(--secondary-text-color);
+}
+.markdown-card > :first-child { margin-top: 0; }
+.markdown-card > :last-child { margin-bottom: 0; }
+.markdown-card h3 { margin: 0 0 6px; font-size: 1rem; font-weight: 600; }
+.markdown-card p { margin: 0; color: var(--secondary-text-color); }
+.markdown-card b, .markdown-card strong { color: var(--primary-text-color); }
+
+/* ---- nested grid card ---- */
+.card-grid { display: grid; gap: 8px; align-items: start; }
+
+/* =============================================================================
+   Column clamping, like Home Assistant (min column width 320 px): a section
+   never keeps a span wider than the columns that are actually shown.
+   ========================================================================== */
+@media (max-width: 1600px) {
+  .ha-container { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .sp-4 { grid-column: span 3; }
+}
+
+@media (max-width: 1300px) {
+  .ha-container { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sp-3, .sp-4 { grid-column: span 2; }
+}
+
+@media (max-width: 1000px) {
+  .ha-view { --column-gap: 8px; padding: 0 8px 32px; }
+  .ha-container { grid-template-columns: 1fr; }
+  .sp-1, .sp-2, .sp-3, .sp-4 { grid-column: span 1; }
+  .harness { font-size: 0.75rem; }
+}

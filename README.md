@@ -62,7 +62,24 @@ The integration connects to the ECL310 using the `pymodbus` library. It sets up 
 
 ---
 
-## 🛠️ Advanced: Adjusting Sensors (`const.py`)
+## � Dashboard
+
+A ready-to-use Lovelace dashboard is included, built for the 2026.9 **sections** view:
+
+* **Standard view** (`input_boolean.expert_mode = off`): the live temperatures as tiles with bar gauges, the setpoint sliders, a storage gauge, the operating states and a 72 h history.
+* **Expert view** (`input_boolean.expert_mode = on`): everything above **plus** the heating curve with the current operating point, all curve setpoints, the limits, valves/pumps and the maintenance/diagnostics section.
+
+![Dashboard](dashboards/preview/screenshot-standard.jpg)
+
+It is made of built-in Home Assistant cards - only the heating curve section uses the HACS card [plotly-graph-card](https://github.com/dbuezas/lovelace-plotly-graph-card).
+
+**[→ Dashboard install guide](dashboards/README.md)** (3 steps: match the entity ids, install `dashboards/ecl310-helpers.yaml` as a package, paste `dashboards/ecl310-dashboard.yaml` into a dashboard).
+
+Want to look first? Open [`dashboards/preview/index.html`](dashboards/preview/index.html) in a browser - an offline preview with sample data, a working Standard/Expert switch and scenarios for the conditional warning cards.
+
+---
+
+## �🛠️ Advanced: Adjusting Sensors (`const.py`)
 
 This integration is designed to be easily extensible. All register mappings are defined in `const.py`. You do not need to touch the complex logic code to add a new sensor.
 

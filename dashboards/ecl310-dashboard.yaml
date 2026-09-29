@@ -1,0 +1,689 @@
+# =============================================================================
+#  Danfoss ECL 310 - Lovelace dashboard (sections view, Home Assistant 2026.9)
+# -----------------------------------------------------------------------------
+#  Requires: the custom integration `danfoss_ecl310` and the helpers in
+#            dashboards/ecl310-helpers.yaml (input_boolean.expert_mode + 3
+#            template entities the dashboard reads from).
+#
+#  Two views in one:
+#      input_boolean.expert_mode = off  ->  standard view (5 sections)
+#      input_boolean.expert_mode = on   ->  expert view   (adds 3 sections)
+#
+#  BEFORE PASTING: the entity ids assume the integration was added with the
+#  device name "ECL310" (entity ids like sensor.ecl310_temp_flow_s3). If your
+#  device has another name, replace every `ecl310` with your own slug.
+#
+#  How to install
+#  --------------
+#  A) UI:   open the dashboard -> edit -> "Raw configuration editor" -> paste
+#           this whole file -> save.
+#  B) YAML: save as <config>/lovelace/ecl310.yaml, then register it:
+#               lovelace:
+#                 dashboards:
+#                   ecl310:
+#                     mode: yaml
+#                     title: Heizung
+#                     icon: mdi:heating-coil
+#                     show_in_sidebar: true
+#                     filename: lovelace/ecl310.yaml
+#           In YAML mode the view has to be nested under a `views:` key:
+#               views:
+#                 - <this file from "type: sections" downwards>
+#
+#  Preview: dashboards/preview/index.html   Docs: dashboards/README.md
+# =============================================================================
+
+type: sections
+max_columns: 4
+dense_section_placement: true
+title: Heizung H.P.S.
+subtitle: Fussbodenheizung · Danfoss ECL 310 · Modbus TCP
+path: heizung
+icon: mdi:heating-coil
+
+# -----------------------------------------------------------------------------
+# Header: one line status banner + badges (the badges are also the view switch)
+# -----------------------------------------------------------------------------
+header:
+  layout: responsive
+  badges_position: bottom
+  badges_wrap: wrap
+  card:
+    type: markdown
+    text_only: true
+    content: >-
+      **{{ states('sensor.heizung_betriebsstatus') }}** &nbsp;·&nbsp;
+      Außen {{ states('sensor.ecl310_temp_outdoor_s1') if has_value('sensor.ecl310_temp_outdoor_s1') else '–' }} °C ·
+      Vorlauf {{ states('sensor.ecl310_temp_flow_s3') if has_value('sensor.ecl310_temp_flow_s3') else '–' }} °C /
+      Soll {{ states('sensor.ecl310_temp_flow_target_calc') if has_value('sensor.ecl310_temp_flow_target_calc') else '–' }} °C
+
+badges:
+  # --- switch between the two views (off = standard, on = expert) ------------
+  - type: entity
+    entity: input_boolean.expert_mode
+    name: Expert
+    icon: mdi:account-hard-hat
+    color: deep-purple
+    show_name: true
+    show_state: false
+    tap_action:
+      action: toggle
+    visibility:
+      - condition: state
+        entity: input_boolean.expert_mode
+        state: "off"
+  - type: entity
+    entity: input_boolean.expert_mode
+    name: Standard
+    icon: mdi:eye-outline
+    color: blue
+    show_name: true
+    show_state: false
+    tap_action:
+      action: toggle
+    visibility:
+      - condition: state
+        entity: input_boolean.expert_mode
+        state: "on"
+
+  # --- live key figures ------------------------------------------------------
+  - type: entity
+    entity: sensor.heizung_betriebsstatus
+    name: Betrieb
+    color: green
+    show_name: true
+    show_state: true
+  - type: entity
+    entity: sensor.ecl310_temp_outdoor_s1
+    name: Außen
+    color: cyan
+    show_name: true
+    show_state: true
+  - type: entity
+    entity: sensor.ecl310_temp_flow_s3
+    name: Vorlauf
+    color: deep-orange
+    show_name: true
+    show_state: true
+  - type: entity
+    entity: sensor.ecl310_temp_dhw_s4
+    name: Warmwasser
+    color: red
+    show_name: true
+    show_state: true
+  - type: entity
+    entity: binary_sensor.heizung_sensorstoerung
+    name: Störung
+    color: red
+    show_name: true
+    show_state: false
+    visibility:
+      - condition: state
+        entity: binary_sensor.heizung_sensorstoerung
+        state: "on"
+
+sections:
+
+  # ===========================================================================
+  #  1) Plant overview  (spans 2 columns)
+  # ===========================================================================
+  - type: grid
+    column_span: 2
+    cards:
+      - type: heading
+        heading: Anlagenübersicht
+        icon: mdi:home-thermometer
+        badges:
+          - type: entity
+            entity: sensor.heizung_betriebsstatus
+            color: state
+            show_state: true
+          - type: entity
+            entity: binary_sensor.heizung_sensorstoerung
+            show_name: true
+            color: red
+            visibility:
+              - condition: state
+                entity: binary_sensor.heizung_sensorstoerung
+                state: "on"
+      - type: grid
+        columns: 2
+        square: false
+        cards:
+          - type: tile
+            entity: sensor.ecl310_temp_outdoor_s1
+            name: Außen (S1)
+            color: cyan
+            features:
+              - type: bar-gauge
+                min: -20
+                max: 40
+          - type: tile
+            entity: sensor.ecl310_temp_flow_s3
+            name: Vorlauf Ist (S3)
+            color: deep-orange
+            features:
+              - type: bar-gauge
+                min: 0
+                max: 90
+          - type: tile
+            entity: sensor.ecl310_temp_flow_target_calc
+            name: Vorlauf Soll (berechnet)
+            icon: mdi:thermostat-auto
+            color: amber
+            features:
+              - type: bar-gauge
+                min: 0
+                max: 90
+          - type: tile
+            entity: sensor.heizung_regelabweichung
+            name: Regelabweichung
+            icon: mdi:scale-balance
+            color: purple
+            features:
+              - type: trend-graph
+                hours_to_show: 24
+          - type: tile
+            entity: sensor.ecl310_temp_room_s2
+            name: Nutzwasser (S2)
+            color: teal
+            features:
+              - type: bar-gauge
+                min: 0
+                max: 90
+          - type: tile
+            entity: sensor.ecl310_temp_dhw_s4
+            name: Warmwasser (S4)
+            color: red
+            features:
+              - type: bar-gauge
+                min: 0
+                max: 90
+
+  # ===========================================================================
+  #  2) Sollwerte
+  # ===========================================================================
+  - type: grid
+    cards:
+      - type: heading
+        heading: Sollwerte
+        icon: mdi:tune-variant
+      - type: tile
+        entity: number.ecl310_set_target_comfort
+        name: Komfort
+        color: orange
+        features:
+          - type: numeric-input
+            style: slider
+      - type: tile
+        entity: number.ecl310_set_target_setback
+        name: Absenkung
+        color: blue
+        features:
+          - type: numeric-input
+            style: slider
+
+  # ===========================================================================
+  #  3) Warmwasser
+  # ===========================================================================
+  - type: grid
+    cards:
+      - type: heading
+        heading: Warmwasser
+        icon: mdi:water-boiler
+        badges:
+          - type: entity
+            entity: sensor.ecl310_mode_dhw
+            show_state: true
+      - type: gauge
+        entity: sensor.ecl310_temp_dhw_s4
+        name: Speichertemperatur (S4)
+        min: 0
+        max: 90
+        needle: true
+        segments:
+          - from: 0
+            color: var(--disabled-text-color)
+          - from: 45
+            color: var(--info-color)
+          - from: 55
+            color: var(--success-color)
+          - from: 70
+            color: var(--warning-color)
+      - type: entities
+        title: Sollwerte
+        entities:
+          - entity: sensor.ecl310_set_dhw_normal_read
+            name: Warmwasser Normal
+            secondary_info: last-changed
+          - entity: sensor.ecl310_set_dhw_setback_read
+            name: Warmwasser Absenkung
+            secondary_info: last-changed
+
+  # ===========================================================================
+  #  4) Operation & messages  (spans 2 columns)
+  # ===========================================================================
+  - type: grid
+    column_span: 2
+    cards:
+      - type: heading
+        heading: Betrieb & Meldungen
+        icon: mdi:bell-ring-outline
+      - type: tile
+        entity: sensor.heizung_betriebsstatus
+        name: Betriebsstatus
+        icon: mdi:radiator
+        vertical: false
+        features_position: bottom
+
+      # --- warnings: only rendered while they apply -------------------------
+      - type: conditional
+        conditions:
+          - condition: state
+            entity: binary_sensor.heizung_sensorstoerung
+            state: "on"
+        card:
+          type: markdown
+          content: >-
+            ### ⚠️ Sensorstörung
+            Mindestens ein Temperaturwert fehlt oder ist nicht verfügbar
+            (Außen S1, Vorlauf S3 oder Vorlauf-Soll).
+      - type: conditional
+        conditions:
+          - condition: state
+            entity: sensor.ecl310_mode_heating
+            state: "4"
+        card:
+          type: markdown
+          content: >-
+            ### ❄️ Frostschutz aktiv
+            Die Anlage hält nur noch die Mindesttemperatur.
+      - type: conditional
+        conditions:
+          - condition: template
+            value_template: >-
+              {{ states('sensor.ecl310_temp_outdoor_s1') | float(-99) >=
+                 states('sensor.ecl310_limit_summer_cutout') | float(99) }}
+        card:
+          type: markdown
+          content: >-
+            ### ☀️ Sommerabschaltung
+            Die Außentemperatur liegt über dem Sommer-Grenzwert,
+            die Heizung ist aus (Warmwasser läuft weiter).
+
+      - type: grid
+        columns: 2
+        square: false
+        cards:
+          - type: entities
+            title: Betriebsarten
+            entities:
+              - entity: sensor.ecl310_mode_heating
+                name: Heizung
+              - entity: sensor.ecl310_mode_dhw
+                name: Warmwasser
+              - entity: sensor.ecl310_mode_pump_p1
+                name: Umwälzpumpe P1
+          - type: entities
+            title: Mischer M1
+            entities:
+              - entity: sensor.ecl310_m1_movement
+                name: Bewegung
+              - entity: sensor.ecl310_mode_valve_m1_opening
+                name: Ventil öffnet
+              - entity: sensor.ecl310_mode_valve_m1_closing
+                name: Ventil schließt
+
+  # ===========================================================================
+  #  5) Temperature history  (spans 2 columns)
+  # ===========================================================================
+  - type: grid
+    column_span: 2
+    cards:
+      - type: heading
+        heading: Temperaturverlauf
+        icon: mdi:chart-timeline-variant
+        badges:
+          - type: button
+            icon: mdi:clock-outline
+            text: 72 Stunden
+      - type: history-graph
+        hours_to_show: 72
+        refresh_interval: 0
+        entities:
+          - entity: sensor.ecl310_temp_outdoor_s1
+            name: Außen (S1)
+          - entity: sensor.ecl310_temp_flow_s3
+            name: Vorlauf (S3)
+          - entity: sensor.ecl310_temp_flow_target_calc
+            name: Vorlauf Soll
+          - entity: sensor.ecl310_temp_dhw_s4
+            name: Warmwasser (S4)
+
+  # ===========================================================================
+  #  6) Heating curve      (expert view)
+  # ===========================================================================
+  - type: grid
+    column_span: 2
+    visibility:
+      - condition: state
+        entity: input_boolean.expert_mode
+        state: "on"
+    cards:
+      - type: heading
+        heading: Heizkurve
+        icon: mdi:chart-bell-curve
+        badges:
+          - type: entity
+            entity: number.ecl310_curve_slope
+            show_state: true
+          - type: entity
+            entity: sensor.ecl310_temp_flow_target_calc
+            show_state: true
+      - type: custom:plotly-graph
+        title: Außentemperatur → Vorlauf-Sollwert
+        refresh_interval: 30
+        hours_to_show: current_day
+        config:
+          displayModeBar: false
+          displaylogo: false
+          scrollZoom: false
+        layout:
+          height: 340
+          margin:
+            l: 54
+            r: 16
+            t: 10
+            b: 46
+          showlegend: true
+          legend:
+            orientation: h
+            x: 0
+            y: -0.2
+          paper_bgcolor: rgba(0,0,0,0)
+          plot_bgcolor: rgba(0,0,0,0)
+          xaxis:
+            title:
+              text: Außentemperatur in °C
+            range:
+              - 12
+              - -32
+            fixedrange: true
+            zeroline: false
+            dtick: 5
+            gridcolor: rgba(127,127,127,0.18)
+          yaxis:
+            title:
+              text: Vorlauf-Soll in °C
+            range:
+              - 20
+              - 60
+            fixedrange: true
+            zeroline: false
+            gridcolor: rgba(127,127,127,0.18)
+        entities:
+          # --- the curve itself -----------------------------------------------
+          - entity: ''
+            name: Kennlinie
+            mode: lines+markers+text
+            text:
+              - -30°
+              - -15°
+              - -5°
+              - 0°
+              - +5°
+              - +15°
+            textposition: top center
+            textfont:
+              size: 10
+              color: '#e74c3c'
+            line:
+              shape: spline
+              color: '#e74c3c'
+              width: 3
+            marker:
+              size: 7
+              color: '#e74c3c'
+            fill: tozeroy
+            fillcolor: rgba(231,76,60,0.10)
+            x:
+              - '-30'
+              - '-15'
+              - '-5'
+              - '0'
+              - '5'
+              - '15'
+            'y':
+              - >-
+                $fn ({ hass }) => parseFloat(hass.states['number.ecl310_curve_30degc'].state)
+              - >-
+                $fn ({ hass }) => parseFloat(hass.states['number.ecl310_curve_15degc'].state)
+              - >-
+                $fn ({ hass }) => parseFloat(hass.states['number.ecl310_curve_5degc'].state)
+              - >-
+                $fn ({ hass }) => parseFloat(hass.states['number.ecl310_curve_0degc'].state)
+              - >-
+                $fn ({ hass }) => parseFloat(hass.states['number.ecl310_curve_5degc_2'].state)
+              - >-
+                $fn ({ hass }) => parseFloat(hass.states['number.ecl310_curve_15degc_2'].state)
+          # --- projection of the current target flow temperature ---------------
+          - entity: ''
+            name: Soll-Projektion
+            showlegend: false
+            mode: lines
+            line:
+              color: rgba(52,152,219,0.45)
+              width: 1
+              dash: dash
+            x:
+              - '-32'
+              - '12'
+            'y':
+              - >-
+                $fn ({ hass }) => parseFloat(hass.states['sensor.ecl310_temp_flow_target_calc'].state)
+              - >-
+                $fn ({ hass }) => parseFloat(hass.states['sensor.ecl310_temp_flow_target_calc'].state)
+          # --- operating point (target) ---------------------------------------
+          - entity: ''
+            name: Betriebspunkt Soll
+            mode: markers
+            marker:
+              size: 12
+              color: '#3498db'
+              symbol: diamond
+              line:
+                width: 1
+                color: '#ffffff'
+            x:
+              - >-
+                $fn ({ hass }) => parseFloat(hass.states['sensor.ecl310_temp_outdoor_s1'].state)
+            'y':
+              - >-
+                $fn ({ hass }) => parseFloat(hass.states['sensor.ecl310_temp_flow_target_calc'].state)
+          # --- operating point (actual) ---------------------------------------
+          - entity: ''
+            name: Vorlauf Ist
+            mode: markers
+            marker:
+              size: 11
+              color: '#e67e22'
+              symbol: circle-open
+              line:
+                width: 3
+                color: '#e67e22'
+            x:
+              - >-
+                $fn ({ hass }) => parseFloat(hass.states['sensor.ecl310_temp_outdoor_s1'].state)
+            'y':
+              - >-
+                $fn ({ hass }) => parseFloat(hass.states['sensor.ecl310_temp_flow_s3'].state)
+          # --- control deviation as a vertical line ---------------------------
+          - entity: ''
+            name: Regelabweichung
+            mode: lines
+            line:
+              color: '#9b59b6'
+              width: 2
+              dash: dot
+            x:
+              - >-
+                $fn ({ hass }) => parseFloat(hass.states['sensor.ecl310_temp_outdoor_s1'].state)
+              - >-
+                $fn ({ hass }) => parseFloat(hass.states['sensor.ecl310_temp_outdoor_s1'].state)
+            'y':
+              - >-
+                $fn ({ hass }) => parseFloat(hass.states['sensor.ecl310_temp_flow_target_calc'].state)
+              - >-
+                $fn ({ hass }) => parseFloat(hass.states['sensor.ecl310_temp_flow_s3'].state)
+
+  # ===========================================================================
+  #  7) System parameters  (expert view)
+  # ===========================================================================
+  - type: grid
+    column_span: 2
+    visibility:
+      - condition: state
+        entity: input_boolean.expert_mode
+        state: "on"
+    cards:
+      - type: heading
+        heading: Systemparameter
+        icon: mdi:cog-outline
+
+      - type: heading
+        heading: Kennlinien-Stützpunkte
+        heading_style: subtitle
+        icon: mdi:chart-bell-curve-cumulative
+      - type: entities
+        entities:
+          - entity: number.ecl310_curve_30degc
+            name: bei −30 °C
+            secondary_info: last-changed
+          - entity: number.ecl310_curve_15degc
+            name: bei −15 °C
+            secondary_info: last-changed
+          - entity: number.ecl310_curve_5degc
+            name: bei −5 °C
+            secondary_info: last-changed
+          - entity: number.ecl310_curve_0degc
+            name: bei 0 °C
+            secondary_info: last-changed
+          - entity: number.ecl310_curve_5degc_2
+            name: bei +5 °C
+            secondary_info: last-changed
+          - entity: number.ecl310_curve_15degc_2
+            name: bei +15 °C
+            secondary_info: last-changed
+          - entity: number.ecl310_curve_slope
+            name: Steigung
+            secondary_info: last-changed
+
+      - type: heading
+        heading: Grenzwerte
+        heading_style: subtitle
+        icon: mdi:speedometer-slow
+      - type: entities
+        entities:
+          - entity: sensor.ecl310_limit_return_day
+            name: Rücklaufbegrenzung Tag
+            secondary_info: last-changed
+          - entity: sensor.ecl310_limit_return_night
+            name: Rücklaufbegrenzung Nacht
+            secondary_info: last-changed
+          - entity: sensor.ecl310_limit_summer_cutout
+            name: Sommerabschaltung
+            secondary_info: last-changed
+          - entity: sensor.ecl310_limit_frost_protection
+            name: Frostschutzgrenze
+            secondary_info: last-changed
+          - type: divider
+          - entity: sensor.ecl310_limit_flow_min
+            name: Vorlauf Minimum
+          - entity: sensor.ecl310_limit_flow_max
+            name: Vorlauf Maximum
+          - entity: sensor.ecl310_limit_min_outdoor
+            name: Außentemperatur Minimum
+          - entity: sensor.ecl310_limit_max_outdoor
+            name: Außentemperatur Maximum
+
+      - type: heading
+        heading: Ventile & Pumpen
+        heading_style: subtitle
+        icon: mdi:valve
+      - type: entities
+        entities:
+          - entity: sensor.ecl310_mode_pump_p2
+            name: Pumpe P2
+          - entity: sensor.ecl310_mode_pump_p3
+            name: Pumpe P3
+          - type: divider
+          - entity: sensor.ecl310_m2_movement
+            name: Mischer M2
+          - entity: sensor.ecl310_m3_movement
+            name: Mischer M3
+          - entity: sensor.ecl310_mode_manual_valve_m1
+            name: Handbetrieb Ventil M1
+          - entity: sensor.ecl310_mode_manual_pump_1
+            name: Handbetrieb Pumpe P1
+
+  # ===========================================================================
+  #  8) Maintenance & diagnostics (expert view, full width)
+  # ===========================================================================
+  - type: grid
+    column_span: 4
+    visibility:
+      - condition: state
+        entity: input_boolean.expert_mode
+        state: "on"
+    cards:
+      - type: heading
+        heading: Wartung & Diagnose
+        icon: mdi:stethoscope
+
+      - type: heading
+        heading: Abfrageintervalle
+        heading_style: subtitle
+        icon: mdi:timer-refresh-outline
+      - type: grid
+        columns: 3
+        square: false
+        cards:
+          - type: tile
+            entity: number.ecl310_interval_status
+            name: Status (s)
+            icon: mdi:timer-refresh
+            features:
+              - type: numeric-input
+                style: slider
+          - type: tile
+            entity: number.ecl310_interval_temp
+            name: Temperaturen (s)
+            icon: mdi:timer-refresh
+            features:
+              - type: numeric-input
+                style: slider
+          - type: tile
+            entity: number.ecl310_interval_settings
+            name: Einstellungen (s)
+            icon: mdi:timer-refresh
+            features:
+              - type: numeric-input
+                style: slider
+
+      - type: heading
+        heading: Geräte-Informationen
+        heading_style: subtitle
+        icon: mdi:information-outline
+      - type: entities
+        entities:
+          - entity: sensor.ecl310_serialnumber
+            name: Seriennummer
+            secondary_info: last-changed
+          - entity: sensor.ecl310_system_firmware
+            name: Firmware
+          - entity: sensor.ecl310_hardware_revision
+            name: Hardware-Revision
+          - entity: sensor.ecl310_application_key
+            name: Application Key
+          - entity: sensor.ecl310_modbus_addr
+            name: Modbus-Adresse

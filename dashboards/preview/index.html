@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <title>Danfoss ECL 310 · dashboard preview (Home Assistant 2026.9)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+  <body class="dark">
+    <!--
+      Offline preview of dashboards/ecl310-dashboard.yaml.
+
+      It renders the very same card tree with a fake `hass` object (see
+      dashboard.js) and the real Home Assistant theme tokens, including the
+      visibility conditions - so switching this page's Standard/Expert button
+      is exactly what input_boolean.expert_mode does in Home Assistant.
+
+      The toolbar is part of the preview, not of the dashboard.
+    -->
+    <div class="harness">
+      <div class="brand">
+        Preview · Danfoss ECL 310 dashboard
+        <span>Home Assistant 2026.9 · sections view · static sample values</span>
+      </div>
+
+      <div class="seg" id="mode-switch">
+        <button data-mode="off">Standard</button>
+        <button data-mode="on">Expert</button>
+      </div>
+
+      <div class="seg" id="scenario-switch">
+        <button data-scenario="normal" class="active">Normal</button>
+        <button data-scenario="fault">Sensor fault</button>
+        <button data-scenario="summer">Summer</button>
+      </div>
+
+      <div class="hint">
+        input_boolean.expert_mode = <b id="mode-value">off</b> ·
+        <b id="section-count">5</b> visible sections
+      </div>
+
+      <div class="spacer"></div>
+      <button class="btn" id="theme-toggle">☀︎ Light</button>
+    </div>
+
+    <div id="view" class="ha-view"></div>
+
+    <script src="icons.js"></script>
+    <script src="dashboard.js"></script>
+  </body>
+</html>
