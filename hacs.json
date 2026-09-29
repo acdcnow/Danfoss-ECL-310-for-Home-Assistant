@@ -3,7 +3,5 @@
   "content_in_root": false,
   "zip_release": false,
   "render_readme": true,
-  "homeassistant": "2025.12.4",
-  "iot_class": "local_polling",
-  "type": "integration"
+  "homeassistant": "2026.9.0"
 }

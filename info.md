@@ -1,92 +1,77 @@
-# Danfoss ECL310 for Home Assistant
+# Danfoss ECL 310
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
-[![Maintainer](https://img.shields.io/badge/maintainer-acdcnow-blue)](https://github.com/acdcnow)
-[![Version](https://img.shields.io/badge/version-1.0.6-green)]()
+Monitor and control a **Danfoss ECL310** district heating controller over **Modbus TCP**, using
+Application 247.1 (V01).
 
-This is a custom integration for **Home Assistant** to monitor and control **Danfoss ECL310** district heating controllers via **Modbus TCP**.
-Using Application 247.1 (V01)
+Reads temperatures, pump and valve states and operating modes, and writes the heating curve and
+setpoints back to the controller.
 
-It supports reading temperatures, pump/valve statuses, and operating modes, as well as controlling target temperatures via standard Climate entities.
+> **Requires Home Assistant 2026.9 or newer**, and the built-in **Modbus** integration. The
+> controller is always addressed on Modbus unit 254, which is fixed by Danfoss and needs no
+> configuration.
 
-## ✨ Features
+## At a glance
 
-* **Native Modbus TCP:** Connects directly to the controller (default port 502).
-* **Multi-Device Support:** Add multiple ECL310 controllers by IP address; they will appear as separate devices in Home Assistant.
-* **Climate Control:** Adjust "Comfort" and "Setback" target temperatures directly from the Lovelace UI. Changes are written back to the controller.
-* **Localized:** Fully translated into **English, German, French, Italian, and Spanish**.
-* **Robust Connection:** Handles different Modbus library versions and connection drops gracefully.
-* **Grouped Entities:** Sensors are logically named and grouped (e.g., "Pump: P1", "Sensor: S1") for easy sorting.
+- **Shared Modbus connection.** The controller is read through Home Assistant's own Modbus
+  integration, so this integration never opens a competing socket and other Modbus integrations can
+  talk to the same controller.
+- **Five devices, cleanly separated.** The controller itself, plus child devices for **Controls**,
+  **Sensors**, **Pumps**, **Configuration** and **Diagnostics**, so entities are not all piled onto
+  one page.
+- **Setpoint control** for comfort and setback temperatures and the heat curve, written straight to
+  the controller.
+- **Honest error reporting.** A rejected write raises a visible error, and a controller that stops
+  answering marks its entities unavailable instead of quietly reporting nothing.
+- **Localized** into English, German, French, Italian and Spanish.
+- **One icon, shipped with the integration** — no entry in the brands repository needed.
 
-## ⚙️ How it Works
+## Installation
 
-The integration connects to the ECL310 using the `pymodbus` library. It sets up three data coordinators to poll the device at different intervals to optimize network traffic:
+### HACS
 
-1. **Fast (30s):** Status updates (Pumps, Valves, Operating Modes) and Temperatures.
-2. **Slow (600s):** Settings, Limits, and Configuration values (Read-only).
+1. Open HACS and add this repository under **Custom repositories**, category **Integration**.
+2. Install **Danfoss ECL310** and restart Home Assistant.
 
-**Note:** Climate entities (Target Temperatures) are updated every 30 seconds. When you change a temperature in Home Assistant, the value is immediately written to the Modbus register.
+### Manual
 
----
+Copy `custom_components/danfoss_ecl310/` into your Home Assistant `config/custom_components/`
+directory and restart.
 
-## 📥 Installation
+## Configuration
 
-### Option 1: HACS (Recommended)
+**Settings → Devices & Services → Add Integration → Danfoss ECL310**, then enter the controller's
+IP address and port (default `502`). The connection is verified before the entry is created, so a
+wrong address is reported rather than leaving you with a dead device.
 
-1. Open HACS in Home Assistant.
-2. Go to "Integrations" > Top right menu > "Custom repositories".
-3. Enter the URL of this GitHub repository.
-4. Category: **Integration**.
-5. Click **Add** and then install "Danfoss ECL310".
-6. Restart Home Assistant.
+Add a second controller by repeating this with a different IP address. To move an existing entry to
+a new address, use **Reconfigure** on the integration's menu — there is no need to delete and
+re-add it.
 
-### Option 2: Manual Installation
+## Current pre-release
 
-1. Download the `danfoss_ecl310` folder from this repository.
-2. Copy the folder into your Home Assistant `config/custom_components/` directory.
-3. The path should look like this: `/config/custom_components/danfoss_ecl310/__init__.py`.
-4. Restart Home Assistant.
+The **1.2.0** line is a testing build: it moves the integration onto Home Assistant's own Modbus
+integration and requires **2026.9 or newer**. See the
+[releases page](https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/releases) for the
+changelog and install notes for the beta.
 
----
+## Full documentation
 
-## 🚀 Configuration
+The [README](https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant#readme) covers the
+device layout, how to add registers in `const.py`, and troubleshooting.
 
-1. Go to **Settings** -> **Devices & Services**.
-2. Click **Add Integration** in the bottom right.
-3. Search for **Danfoss ECL310**.
-4. Enter the **IP Address** of your controller.
-5. Enter the **Port** (Default is `502`).
-6. Click Submit.
+## Issues
 
-*To add a second device, simply repeat these steps with a different IP address.*
+Report problems on the
+[issue tracker](https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/issues) with debug
+logging enabled:
 
----
+```yaml
+logger:
+  default: info
+  logs:
+    custom_components.danfoss_ecl310: debug
+    modbus_connection: debug
+```
 
-## 🛠️ Advanced: Adjusting Sensors (`const.py`)
-
-This integration is designed to be easily extensible. All register mappings are defined in `const.py`. You do not need to touch the complex logic code to add a new sensor.
-
-### How to add or modify a sensor:
-
-1. Open `custom_components/danfoss_ecl310/const.py`.
-2. Locate the appropriate list based on how often you want the data to update:
-* `SENSORS_60S`: Status/Modes (Updates every 30s).
-* `SENSORS_300S`: Temperatures (Updates every 30s).
-* `SENSORS_600S`: Static settings (Updates every 10 mins).
-
-
-3. Add a new line to the list dictionary.
-
-### Sensor Configuration Structure
-
-```python
-{
-    "key": "unique_internal_key",   # Must be unique per device (e.g., "return_temp")
-    "name": "Displayed Name",       # e.g., "Sensor: Return Temp"
-    "addr": 12345,                  # The Modbus Register Address
-    "type": "input",                # "input" (Input Register) or "holding" (Holding Register)
-    "scale": 0.01,                  # Multiplier (e.g., 0.01 to convert 2350 to 23.50)
-    "unit": UnitOfTemperature.CELSIUS, # Optional: Unit
-    "icon": "mdi:thermometer",      # Optional: Icon
-    "trans_key": "simple_on_off"    # Optional: Translation key for state mapping
-}
+*Not affiliated with Danfoss. "Danfoss" and "ECL" are used only to identify the hardware this
+integration controls.*

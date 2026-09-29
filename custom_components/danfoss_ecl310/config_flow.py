@@ -1,78 +1,128 @@
+"""Config flow for the Danfoss ECL 310 integration."""
+
+from __future__ import annotations
+
 import logging
+from typing import Any, Final
+
+from modbus_connection import ModbusError, ModbusTcpParams
 import voluptuous as vol
-from homeassistant import config_entries
+
+from homeassistant.components.modbus import async_get_temporary_unit
+from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResult
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import config_validation as cv
 
-from .const import DOMAIN, DEFAULT_PORT
+from .const import DEFAULT_PORT, DEFAULT_UNIT_ID, DOMAIN
+from .device import INPUT, DanfossEcl310, RegisterRef
 
 _LOGGER = logging.getLogger(__name__)
 
-DATA_SCHEMA = vol.Schema({
-    vol.Required(CONF_HOST): str,
-    vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
-})
+CONF_NAME: Final = "name"
 
-async def validate_input(hass: HomeAssistant, data: dict) -> dict:
-    """Validiert die Eingaben und testet die Verbindung."""
-    from .modbus_client import DanfossModbusHub
-    
-    hub = DanfossModbusHub(data[CONF_HOST], data[CONF_PORT])
-    
-    try:
-        await hub.connect()
-        # Test-Register lesen (Slave 254), z.B. 4200 (Betriebsart)
-        test_val = await hub.read_register(4200, slave_id=254, input_type="input")
-        
-        if test_val is None:
-            _LOGGER.warning("Verbindung steht, aber keine Daten lesbar.")
-            
-    except Exception as e:
-        _LOGGER.error(f"Verbindungsfehler im Config Flow: {e}")
-        raise ConnectionError
-    finally:
-        hub.close()
+#: The operating mode of the heating circuit, used purely to prove the
+#: controller answers on the given host and port.
+PROBE_REFS: Final[tuple[RegisterRef, ...]] = (
+    RegisterRef(key="mode_heating", address=4200, space=INPUT),
+)
 
-    return {"title": data.get("name", f"ECL 310 ({data[CONF_HOST]})")}
 
-class DanfossConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+async def _async_probe(hass: HomeAssistant, data: dict[str, Any]) -> None:
+    """Check that the controller answers on the configured address.
+
+    The connection itself is owned by the ``modbus`` integration, so a temporary
+    unit is borrowed for the duration of the flow rather than opening a socket
+    here. Raises :class:`~modbus_connection.ModbusError` when it does not answer,
+    and :class:`HomeAssistantError` when an existing entry already uses the same
+    device over different link settings.
+    """
+    async with async_get_temporary_unit(
+        hass,
+        ModbusTcpParams(host=data[CONF_HOST], port=data[CONF_PORT]),
+        DEFAULT_UNIT_ID,
+    ) as unit:
+        await DanfossEcl310(unit).async_read_group(PROBE_REFS)
+
+
+class DanfossEcl310ConfigFlow(ConfigFlow, domain=DOMAIN):
+    """Handle setting up a Danfoss ECL 310 from the UI."""
+
     VERSION = 1
 
-    async def async_step_user(self, user_input=None) -> FlowResult:
-        errors = {}
-        
-        # 1. Berechne Vorschlag für den Namen (ECL 1, ECL 2 ...)
-        current_entries = self._async_current_entries()
-        count = len(current_entries) + 1
-        default_name = f"ECL {count}"
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect the controller's address and verify it responds."""
+        errors: dict[str, str] = {}
 
         if user_input is not None:
-            # Prüfen ob IP schon existiert
+            # The host is the unique id, so two entries cannot point at the same
+            # controller and fight over it.
             await self.async_set_unique_id(user_input[CONF_HOST])
             self._abort_if_unique_id_configured()
 
             try:
-                await validate_input(self.hass, user_input)
-                
-                # WICHTIG: Den vom User gewählten Namen als Titel setzen
-                return self.async_create_entry(
-                    title=user_input.get("name", default_name), 
-                    data=user_input
-                )
-            except ConnectionError:
+                await _async_probe(self.hass, user_input)
+            except (ModbusError, HomeAssistantError):
                 errors["base"] = "cannot_connect"
-            except Exception as e:
-                _LOGGER.exception("Unerwarteter Fehler")
+            except Exception:
+                _LOGGER.exception("Unexpected error while probing the controller")
                 errors["base"] = "unknown"
-
-        # Schema mit Namens-Feld erweitern
-        schema = vol.Schema({
-            vol.Required(CONF_HOST): str,
-            vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
-            vol.Optional("name", default=default_name): str,
-        })
+            else:
+                return self.async_create_entry(
+                    title=user_input.get(CONF_NAME) or self._default_name(),
+                    data=user_input,
+                )
 
         return self.async_show_form(
-            step_id="user", data_schema=schema, errors=errors
+            step_id="user", data_schema=self._user_schema(), errors=errors
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Change the controller's address without recreating the entry."""
+        entry = self._get_reconfigure_entry()
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            try:
+                await _async_probe(self.hass, user_input)
+            except (ModbusError, HomeAssistantError):
+                errors["base"] = "cannot_connect"
+            except Exception:
+                _LOGGER.exception("Unexpected error while probing the controller")
+                errors["base"] = "unknown"
+            else:
+                return self.async_update_reload_and_abort(
+                    entry,
+                    unique_id=user_input[CONF_HOST],
+                    data_updates=user_input,
+                )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_HOST, default=entry.data[CONF_HOST]): str,
+                    vol.Required(CONF_PORT, default=entry.data[CONF_PORT]): cv.port,
+                }
+            ),
+            errors=errors,
+        )
+
+    def _default_name(self) -> str:
+        """Suggest the next free name, e.g. ``ECL 2``."""
+        return f"ECL {len(self._async_current_entries()) + 1}"
+
+    def _user_schema(self) -> vol.Schema:
+        """Build the setup form."""
+        return vol.Schema(
+            {
+                vol.Required(CONF_HOST): str,
+                vol.Required(CONF_PORT, default=DEFAULT_PORT): cv.port,
+                vol.Optional(CONF_NAME, default=self._default_name()): str,
+            }
         )
