@@ -2,7 +2,7 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![Maintainer](https://img.shields.io/badge/maintainer-acdcnow-blue)](https://github.com/acdcnow)
-[![Version](https://img.shields.io/badge/version-1.2.1-green)]()
+[![Version](https://img.shields.io/badge/version-1.2.2-green)]()
 
 ![Danfoss ECL 310](custom_components/danfoss_ecl310/brand/logo.png)
 
@@ -17,6 +17,32 @@ It supports reading temperatures, pump/valve statuses, and operating modes, as w
 * The built-in **Modbus** integration (installed automatically as a dependency). It does not need any YAML configuration of its own.
 
 The controller is always addressed on Modbus unit **254**, which is fixed by Danfoss for application 247.1 and therefore is not asked for during setup.
+
+## 🚀 Version 1.2.2
+
+1.2.2 corrects two register addresses and adds the remaining application 247.1 values. The full list
+is in [CHANGELOG.md](CHANGELOG.md) and in the [release notes](https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/releases/tag/v1.2.2).
+
+**Fixed**
+
+* **`Limit: Summer Cutout`** was reading `11189`; the controller reports it on **`11178`**. It never
+  answered, which is why the log filled with `summer_cutout` in the *"did not answer this cycle"*
+  warning.
+* **`Temp: Flow Target (Calc)`** was reading `11253`; the calculated flow target is on **`11252`**,
+  which is why it appeared in the same warning.
+
+**Added**
+
+* **`Temp: Outdoor (Acc.)`** (`11099`) and **`Temp: Reference Place`** (`11500`) on the **Sensors**
+  device.
+* **Pump protection and start temperatures** as both a read-only sensor *and* a writable number:
+  **Pump Frost Protection** (`11076`), **Pump Start Temperature** (`11077`) and
+  **Circ Pump Frost Protection** (`12075`). The numbers live on **Controls**, their read-backs on
+  **Diagnostics**.
+
+Both corrected sensors keep their entity IDs - only the register behind them changed - so nothing has
+to be re-mapped after upgrading. The new values are read as **whole degrees**, like
+*Limit: Frost Protection*; see [CHANGELOG.md](CHANGELOG.md) if your controller reports a decimal.
 
 ## 🚀 Version 1.2.0
 
@@ -83,8 +109,8 @@ The integration creates a device for the controller itself and a **child device 
 | Device | What is on it |
 | --- | --- |
 | **ECL 310** *(the controller)* | The identity only — manufacturer, model, serial number, firmware and hardware revision. No entities of its own. |
-| **Controls** | The writable values: comfort and setback setpoints, heat curve slope and the six curve coordinates. |
-| **Sensors** | The live readings: temperatures, operating modes, valve travel, and the return and summer limits. |
+| **Controls** | The writable values: comfort and setback setpoints, heat curve slope, the six curve coordinates, and the pump protection and start temperatures. |
+| **Sensors** | The live readings: temperatures, operating modes, valve travel, the accumulated outdoor and reference temperatures, and the return and summer limits. |
 | **Pumps** | The three circulation pumps and their manual modes. |
 | **Configuration** | The polling interval sliders. |
 | **Diagnostics** | Limits, setpoint read-backs and system information — hidden from the main view by their entity category. |

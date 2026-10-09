@@ -4,6 +4,44 @@ All notable changes to this integration are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project uses
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-10-09
+
+### Fixed
+
+- **`Limit: Summer Cutout` pointed at the wrong register.** It read `11189`, but the controller
+  reports the summer cut-out on **`11178`**. The sensor never answered, which is why every poll
+  logged `2 register(s) did not answer this cycle: flow_target_calc, summer_cutout`. It now reads
+  `11178`.
+- **`Temp: Flow Target (Calc)` pointed at the wrong register.** The calculated flow target is on
+  **`11252`**; `11253` was off by one, so this sensor was the other half of the same *did not
+  answer* warning. It now reads `11252`.
+
+### Added
+
+- **`Temp: Outdoor (Acc.)`** - the accumulated (filtered) outdoor temperature, register `11099`.
+- **`Temp: Reference Place`** - register `11500`.
+- **Pump protection and start temperatures**, registers `11076`, `11077` and `12075`. Each is
+  available both as a read-only sensor and as a writable number, mirroring the comfort/setback
+  pair:
+  - `Set: Pump Frost Protection` / `Set: Pump Frost Protection (Read)` (`11076`)
+  - `Set: Pump Start Temperature` / `Set: Pump Start Temperature (Read)` (`11077`)
+  - `Set: Circ Pump Frost Protection` / `Set: Circ Pump Frost Protection (Read)` (`12075`) - the
+    circulation pump's frost-protection temperature ("Pump-Zirk. Temp-Frost").
+
+  The numbers sit on the **Controls** device, their read-backs on **Diagnostics**, and the two
+  outdoor readings on **Sensors**.
+
+### Notes
+
+- The two corrected sensors keep their keys, so their entity IDs and history are unchanged - only
+  the register they read moved.
+- The new temperature registers are read as **whole degrees** (no `scale`), the same as
+  `Limit: Frost Protection`. If your controller reports one of them with a decimal, add a matching
+  `"scale"` to its entry in `const.py`.
+- The new pump numbers default to `-10...30 °C` (frost protection) and `-10...60 °C` (start
+  temperature). Verify the permitted range for your application and adjust `min`/`max` in
+  `const.py` if it differs.
+
 ## [1.2.1] - 2026-09-29
 
 ### Fixed

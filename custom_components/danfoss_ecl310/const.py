@@ -156,11 +156,16 @@ SENSORS_TEMPERATURE: Final[list[dict[str, Any]]] = [
     {"key": "temp_s5", "name": "Temp: S5", "addr": 10204, "type": "input", "signed": True, "scale": 0.01, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "precision": 1},
     {"key": "temp_s6", "name": "Temp: S6", "addr": 10205, "type": "input", "signed": True, "scale": 0.01, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "precision": 1},
 
-    {"key": "flow_target_calc", "name": "Temp: Flow Target (Calc)", "addr": 11253, "type": "input", "signed": True, "scale": 0.1, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:thermostat-auto", "precision": 1},
+    {"key": "flow_target_calc", "name": "Temp: Flow Target (Calc)", "addr": 11252, "type": "input", "signed": True, "scale": 0.1, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:thermostat-auto", "precision": 1},
 
     {"key": "return_limit_day", "name": "Limit: Return (Day)", "addr": 11181, "type": "input", "signed": True, "scale": 0.1, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:arrow-left-bold-outline", "precision": 1},
     {"key": "return_limit_night", "name": "Limit: Return (Night)", "addr": 11182, "type": "input", "signed": True, "scale": 0.1, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:arrow-left-bold-outline", "precision": 1},
-    {"key": "summer_cutout", "name": "Limit: Summer Cutout", "addr": 11189, "type": "input", "signed": True, "scale": 0.1, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:weather-sunny-off", "precision": 1},
+    {"key": "summer_cutout", "name": "Limit: Summer Cutout", "addr": 11178, "type": "input", "signed": True, "scale": 0.1, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:weather-sunny-off", "precision": 1},
+
+    # Further application-247.1 readings. The controller reports these in whole
+    # degrees, so they carry no ``scale``, like Limit: Frost Protection.
+    {"key": "temp_outdoor_acc", "name": "Temp: Outdoor (Acc.)", "addr": 11099, "type": "input", "signed": True, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:thermometer"},
+    {"key": "temp_reference", "name": "Temp: Reference Place", "addr": 11500, "type": "input", "signed": True, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:map-marker"},
 ]
 
 
@@ -177,6 +182,12 @@ SENSORS_SETTINGS: Final[list[dict[str, Any]]] = [
     {"key": "target_setback_status", "name": "Set: Setback Target (Read)", "addr": 11180, "type": "input", "signed": True, "scale": 0.1, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "entity_category": EntityCategory.DIAGNOSTIC, "precision": 1},
     {"key": "target_dhw", "name": "Set: DHW Normal (Read)", "addr": 12189, "type": "input", "signed": True, "scale": 0.1, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "entity_category": EntityCategory.DIAGNOSTIC, "precision": 1},
     {"key": "target_dhw_setback", "name": "Set: DHW Setback (Read)", "addr": 12190, "type": "input", "signed": True, "scale": 0.1, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "entity_category": EntityCategory.DIAGNOSTIC, "precision": 1},
+
+    # Read-back of the pump protection and start temperatures the number
+    # entities write. Whole degrees, so no ``scale``.
+    {"key": "pump_frost_status", "name": "Set: Pump Frost Protection (Read)", "addr": 11076, "type": "input", "signed": True, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "entity_category": EntityCategory.DIAGNOSTIC},
+    {"key": "pump_start_status", "name": "Set: Pump Start Temperature (Read)", "addr": 11077, "type": "input", "signed": True, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "entity_category": EntityCategory.DIAGNOSTIC},
+    {"key": "pump_circ_frost_status", "name": "Set: Circ Pump Frost Protection (Read)", "addr": 12075, "type": "input", "signed": True, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "entity_category": EntityCategory.DIAGNOSTIC},
 
     # System information. Unsigned: these are identity values, not temperatures,
     # so a serial number above 32767 must not be decoded as negative.
@@ -207,6 +218,13 @@ NUMBER_ENTITIES: Final[list[dict[str, Any]]] = [
     {"name": "Curve: 0°C", "key": "heat_curve_00", "address": 11402, "min": 0, "max": 90, "step": 1, "icon": "mdi:chart-bell-curve", "scale": 1, "unit": UnitOfTemperature.CELSIUS},
     {"name": "Curve: +5°C", "key": "heat_curve_p05", "address": 11403, "min": 0, "max": 90, "step": 1, "icon": "mdi:chart-bell-curve", "scale": 1, "unit": UnitOfTemperature.CELSIUS},
     {"name": "Curve: +15°C", "key": "heat_curve_p15", "address": 11404, "min": 0, "max": 90, "step": 1, "icon": "mdi:chart-bell-curve", "scale": 1, "unit": UnitOfTemperature.CELSIUS},
+
+    # Pump protection and start temperatures. Whole degrees on the controller,
+    # so ``scale`` stays 1. Verify the ranges against your application before
+    # relying on the extremes.
+    {"name": "Set: Pump Frost Protection", "key": "conf_pump_frost", "address": 11076, "min": -10, "max": 30, "step": 1, "icon": "mdi:snowflake", "scale": 1, "unit": UnitOfTemperature.CELSIUS},
+    {"name": "Set: Pump Start Temperature", "key": "conf_pump_start", "address": 11077, "min": -10, "max": 60, "step": 1, "icon": "mdi:pump", "scale": 1, "unit": UnitOfTemperature.CELSIUS},
+    {"name": "Set: Circ Pump Frost Protection", "key": "conf_pump_circ_frost", "address": 12075, "min": -10, "max": 30, "step": 1, "icon": "mdi:snowflake", "scale": 1, "unit": UnitOfTemperature.CELSIUS},
 ]
 
 
