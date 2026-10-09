@@ -30,6 +30,10 @@ is in [CHANGELOG.md](CHANGELOG.md) and in the [release notes](https://github.com
   warning.
 * **`Temp: Flow Target (Calc)`** was reading `11253`; the calculated flow target is on **`11252`**,
   which is why it appeared in the same warning.
+* **Three temperatures were decoded with the wrong scale** (10-100x too large):
+  **`Temp: Flow Target (Calc)`** showed `246.30` instead of `24.63`, and **`Temp: Outdoor (Acc.)`**
+  / **`Temp: Reference Place`** showed `1619.0` / `2463.0` instead of `16.19` / `24.63`. They are
+  hundredths-of-a-degree registers and now use `scale: 0.01`.
 
 **Added**
 
@@ -42,14 +46,14 @@ is in [CHANGELOG.md](CHANGELOG.md) and in the [release notes](https://github.com
 
 **Changed**
 
-* **`Temp: Flow Target (Calc)`** now shows **two decimal places**, and **`Temp: Outdoor (Acc.)`**
-  and **`Temp: Reference Place`** one decimal place.
+* **`Temp: Flow Target (Calc)`**, **`Temp: Outdoor (Acc.)`** and **`Temp: Reference Place`** now
+  show **two decimal places**.
 * The **brand images** are now the Danfoss logo - the light and dark wordmark plus the Danfoss "D"
   as the integration icon - replacing the previous custom artwork.
 
 Both corrected sensors keep their entity IDs - only the register behind them changed - so nothing has
-to be re-mapped after upgrading. The new values are read as **whole degrees**, like
-*Limit: Frost Protection*; see [CHANGELOG.md](CHANGELOG.md) if your controller reports a decimal.
+to be re-mapped after upgrading. The three temperatures above are hundredths-of-a-degree registers,
+so they use `scale: 0.01` and are shown with two decimals.
 
 ## 🚀 Version 1.2.0
 

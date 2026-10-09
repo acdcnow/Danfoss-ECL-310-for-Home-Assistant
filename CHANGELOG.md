@@ -15,6 +15,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - **`Temp: Flow Target (Calc)` pointed at the wrong register.** The calculated flow target is on
   **`11252`**; `11253` was off by one, so this sensor was the other half of the same *did not
   answer* warning. It now reads `11252`.
+- **Three temperatures were decoded with the wrong scale** and read 10-100x too large:
+  `Temp: Flow Target (Calc)` showed `246.30` instead of `24.63`, and `Temp: Outdoor (Acc.)` /
+  `Temp: Reference Place` showed `1619.0` / `2463.0` instead of `16.19` / `24.63`. These are
+  hundredths-of-a-degree registers, so they now use `"scale": 0.01`.
 
 ### Added
 
@@ -33,8 +37,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
-- `Temp: Flow Target (Calc)` now suggests **two** decimal places, and `Temp: Outdoor (Acc.)` and
-  `Temp: Reference Place` **one** decimal place.
+- `Temp: Flow Target (Calc)`, `Temp: Outdoor (Acc.)` and `Temp: Reference Place` now suggest
+  **two** decimal places.
 - The **brand images** are now the Danfoss logo: the light and dark wordmark replace the previous
   custom artwork, and the integration icon is the Danfoss "D". All six images (`logo`, `dark_logo`
   and `icon`, each with an `@2x` twin) are transparent PNGs in the sizes Home Assistant expects.
@@ -43,9 +47,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - The two corrected sensors keep their keys, so their entity IDs and history are unchanged - only
   the register they read moved.
-- The new temperature registers are read as **whole degrees** (no `scale`), the same as
-  `Limit: Frost Protection`. If your controller reports one of them with a decimal, add a matching
-  `"scale"` to its entry in `const.py`.
+- The **pump** protection/start temperatures are still declared as whole degrees. If one of them
+  reads 10x or 100x too large on your controller, give it the matching `"scale"` in `const.py`
+  (`0.1` or `0.01`) - the same fix that was applied to the three temperatures above.
 - The new pump numbers default to `-10...30 °C` (frost protection) and `-10...60 °C` (start
   temperature). Verify the permitted range for your application and adjust `min`/`max` in
   `const.py` if it differs.
