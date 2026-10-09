@@ -35,6 +35,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - `Temp: Flow Target (Calc)` now suggests **two** decimal places, and `Temp: Outdoor (Acc.)` and
   `Temp: Reference Place` **one** decimal place.
+- The **brand images** are now the Danfoss logo: the light and dark wordmark replace the previous
+  custom artwork, and the integration icon is the Danfoss "D". All six images (`logo`, `dark_logo`
+  and `icon`, each with an `@2x` twin) are transparent PNGs in the sizes Home Assistant expects.
 
 ### Notes
 

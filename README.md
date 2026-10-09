@@ -44,6 +44,8 @@ is in [CHANGELOG.md](CHANGELOG.md) and in the [release notes](https://github.com
 
 * **`Temp: Flow Target (Calc)`** now shows **two decimal places**, and **`Temp: Outdoor (Acc.)`**
   and **`Temp: Reference Place`** one decimal place.
+* The **brand images** are now the Danfoss logo - the light and dark wordmark plus the Danfoss "D"
+  as the integration icon - replacing the previous custom artwork.
 
 Both corrected sensors keep their entity IDs - only the register behind them changed - so nothing has
 to be re-mapped after upgrading. The new values are read as **whole degrees**, like
