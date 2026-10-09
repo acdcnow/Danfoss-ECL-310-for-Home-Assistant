@@ -31,6 +31,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   The numbers sit on the **Controls** device, their read-backs on **Diagnostics**, and the two
   outdoor readings on **Sensors**.
 
+### Changed
+
+- `Temp: Flow Target (Calc)` now suggests **two** decimal places, and `Temp: Outdoor (Acc.)` and
+  `Temp: Reference Place` **one** decimal place.
+
 ### Notes
 
 - The two corrected sensors keep their keys, so their entity IDs and history are unchanged - only

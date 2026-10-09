@@ -156,7 +156,7 @@ SENSORS_TEMPERATURE: Final[list[dict[str, Any]]] = [
     {"key": "temp_s5", "name": "Temp: S5", "addr": 10204, "type": "input", "signed": True, "scale": 0.01, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "precision": 1},
     {"key": "temp_s6", "name": "Temp: S6", "addr": 10205, "type": "input", "signed": True, "scale": 0.01, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "precision": 1},
 
-    {"key": "flow_target_calc", "name": "Temp: Flow Target (Calc)", "addr": 11252, "type": "input", "signed": True, "scale": 0.1, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:thermostat-auto", "precision": 1},
+    {"key": "flow_target_calc", "name": "Temp: Flow Target (Calc)", "addr": 11252, "type": "input", "signed": True, "scale": 0.1, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:thermostat-auto", "precision": 2},
 
     {"key": "return_limit_day", "name": "Limit: Return (Day)", "addr": 11181, "type": "input", "signed": True, "scale": 0.1, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:arrow-left-bold-outline", "precision": 1},
     {"key": "return_limit_night", "name": "Limit: Return (Night)", "addr": 11182, "type": "input", "signed": True, "scale": 0.1, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:arrow-left-bold-outline", "precision": 1},
@@ -164,8 +164,8 @@ SENSORS_TEMPERATURE: Final[list[dict[str, Any]]] = [
 
     # Further application-247.1 readings. The controller reports these in whole
     # degrees, so they carry no ``scale``, like Limit: Frost Protection.
-    {"key": "temp_outdoor_acc", "name": "Temp: Outdoor (Acc.)", "addr": 11099, "type": "input", "signed": True, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:thermometer"},
-    {"key": "temp_reference", "name": "Temp: Reference Place", "addr": 11500, "type": "input", "signed": True, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:map-marker"},
+    {"key": "temp_outdoor_acc", "name": "Temp: Outdoor (Acc.)", "addr": 11099, "type": "input", "signed": True, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:thermometer", "precision": 1},
+    {"key": "temp_reference", "name": "Temp: Reference Place", "addr": 11500, "type": "input", "signed": True, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:map-marker", "precision": 1},
 ]
 
 

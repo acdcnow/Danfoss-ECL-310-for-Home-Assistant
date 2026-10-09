@@ -40,6 +40,11 @@ is in [CHANGELOG.md](CHANGELOG.md) and in the [release notes](https://github.com
   **Circ Pump Frost Protection** (`12075`). The numbers live on **Controls**, their read-backs on
   **Diagnostics**.
 
+**Changed**
+
+* **`Temp: Flow Target (Calc)`** now shows **two decimal places**, and **`Temp: Outdoor (Acc.)`**
+  and **`Temp: Reference Place`** one decimal place.
+
 Both corrected sensors keep their entity IDs - only the register behind them changed - so nothing has
 to be re-mapped after upgrading. The new values are read as **whole degrees**, like
 *Limit: Frost Protection*; see [CHANGELOG.md](CHANGELOG.md) if your controller reports a decimal.
