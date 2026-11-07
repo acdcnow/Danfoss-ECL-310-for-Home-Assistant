@@ -160,12 +160,14 @@ SENSORS_TEMPERATURE: Final[list[dict[str, Any]]] = [
 
     {"key": "return_limit_day", "name": "Limit: Return (Day)", "addr": 11181, "type": "input", "signed": True, "scale": 0.1, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:arrow-left-bold-outline", "precision": 1},
     {"key": "return_limit_night", "name": "Limit: Return (Night)", "addr": 11182, "type": "input", "signed": True, "scale": 0.1, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:arrow-left-bold-outline", "precision": 1},
-    # Summer cut-out (Danfoss's "Sommer-Aus / Summer, cut-out"). Danfoss
-    # documents the parameter as 11179; on the reference controller the value
-    # answers on register 11180, which is what this integration reads. The
-    # limit is a whole-degree value (0...50 °C, 0 = OFF), unlike the
-    # tenth-degree setpoints next to it, so it is not scaled by 0.1.
-    {"key": "summer_cutout", "name": "Limit: Summer Cutout", "addr": 11180, "type": "input", "scale": 1, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:weather-sunny-off"},
+    # Summer cut-out (Danfoss's "Sommer-Aus / Summer, cut-out"). Its parameter
+    # ID is 11179, and the controller serves an ECL parameter *n* at the
+    # zero-based register *n - 1*, so the cut-out is at 11178. The limit is a
+    # whole-degree value (0...50 °C, 0 = OFF), unlike the tenth-degree room
+    # setpoints next to it, so it is not scaled by 0.1. Register 11180 is the
+    # setback setpoint (parameter 11181), not the cut-out - reading it here
+    # showed a 19.0 °C setback as 190.
+    {"key": "summer_cutout", "name": "Limit: Summer Cutout", "addr": 11178, "type": "input", "scale": 1, "unit": UnitOfTemperature.CELSIUS, "device_class": SensorDeviceClass.TEMPERATURE, "icon": "mdi:weather-sunny-off"},
 
     # Further application-247.1 readings. The controller reports these in
     # hundredths of a degree, so they are scaled by 0.01.

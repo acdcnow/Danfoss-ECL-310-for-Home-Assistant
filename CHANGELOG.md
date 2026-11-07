@@ -4,6 +4,17 @@ All notable changes to this integration are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project uses
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.4] - 2026-11-07
+
+### Fixed
+
+- **`Limit: Summer Cutout` was reading the setback setpoint.** 1.2.3 moved the sensor to register
+  `11180`, which holds the **setback** setpoint (Danfoss parameter `11181`, tenths of a degree), so
+  a `19.0 °C` setback came through as `190`. The summer cut-out is parameter `11179`, and an ECL
+  parameter *n* is served at the zero-based register *n - 1*, so the cut-out lives at **`11178`** -
+  the register 1.2.2 already read. The sensor reads `11178` again and keeps the whole-degree
+  decoding (`0...50 °C`, `0` = OFF) that 1.2.3 introduced.
+
 ## [1.2.3] - 2026-11-07
 
 ### Fixed

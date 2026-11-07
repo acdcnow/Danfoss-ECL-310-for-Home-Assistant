@@ -2,7 +2,7 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![Maintainer](https://img.shields.io/badge/maintainer-acdcnow-blue)](https://github.com/acdcnow)
-[![Version](https://img.shields.io/badge/version-1.2.3-green)]()
+[![Version](https://img.shields.io/badge/version-1.2.4-green)]()
 
 ![Danfoss ECL 310](custom_components/danfoss_ecl310/brand/logo.png)
 
@@ -17,6 +17,19 @@ It supports reading temperatures, pump/valve statuses, and operating modes, as w
 * The built-in **Modbus** integration (installed automatically as a dependency). It does not need any YAML configuration of its own.
 
 The controller is always addressed on Modbus unit **254**, which is fixed by Danfoss for application 247.1 and therefore is not asked for during setup.
+
+## 🚀 Version 1.2.4
+
+1.2.4 puts `Limit: Summer Cutout` back on the register that actually holds it. The full list is in
+[CHANGELOG.md](CHANGELOG.md).
+
+**Fixed**
+
+* **`Limit: Summer Cutout` was showing the setback setpoint** - 1.2.3 moved the sensor to register
+  **`11180`**, which is the *setback* setpoint (Danfoss parameter `11181`, tenths of a degree), so a
+  `19.0 °C` setback appeared as `190`. The summer cut-out is parameter **`11179`**, and an ECL
+  parameter *n* is served at the zero-based register *n - 1* on this controller, so the sensor reads
+  **`11178`** again - still in whole degrees, `0` = OFF.
 
 ## 🚀 Version 1.2.3
 
