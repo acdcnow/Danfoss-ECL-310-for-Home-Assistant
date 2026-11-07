@@ -2,7 +2,7 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![Maintainer](https://img.shields.io/badge/maintainer-acdcnow-blue)](https://github.com/acdcnow)
-[![Version](https://img.shields.io/badge/version-1.2.2-green)]()
+[![Version](https://img.shields.io/badge/version-1.2.3-green)]()
 
 ![Danfoss ECL 310](custom_components/danfoss_ecl310/brand/logo.png)
 
@@ -13,10 +13,29 @@ It supports reading temperatures, pump/valve statuses, and operating modes, as w
 
 ## ⚠️ Requirements
 
-* Home Assistant **2026.9** or newer.
+* Home Assistant **2026.11.0** or newer.
 * The built-in **Modbus** integration (installed automatically as a dependency). It does not need any YAML configuration of its own.
 
 The controller is always addressed on Modbus unit **254**, which is fixed by Danfoss for application 247.1 and therefore is not asked for during setup.
+
+## 🚀 Version 1.2.3
+
+1.2.3 fixes the scaling of one register and raises the minimum Home Assistant version to
+**2026.11.0**. The full list is in [CHANGELOG.md](CHANGELOG.md).
+
+**Fixed**
+
+* **`Limit: Summer Cutout` was shown ten times too small** - a `20 °C` limit appeared as `2.0 °C`.
+  The limit is a **whole-degree** value (`0...50`, `0` = OFF), not tenths, so it is no longer
+  multiplied by `0.1`, and it now reads register **`11180`** instead of `11178`. It shows the same
+  value as the controller's display.
+
+**Changed**
+
+* **Home Assistant 2026.11.0 or newer is required.** The setup uses the 2026.11 device registry and
+  config entry APIs: `DeviceInfo` is a dataclass there, devices are registered through
+  `async_get_or_create_from_info`, and unloading uses `async_unload_platforms_or_raise`.
+* The integration now declares the manifest category **`climate.thermostats_heating`**.
 
 ## 🚀 Version 1.2.2
 
@@ -171,7 +190,7 @@ The connection is verified before the entry is created, so a wrong IP is reporte
 
 ## 📊 Dashboard
 
-A ready-to-use Lovelace dashboard is included, built for the 2026.9 **sections** view:
+A ready-to-use Lovelace dashboard is included, built for the **sections** view:
 
 * **Standard view** (`input_boolean.expert_mode = off`): the live temperatures as tiles with bar gauges, the setpoint sliders, a storage gauge, the operating states and a 72 h history.
 * **Expert view** (`input_boolean.expert_mode = on`): everything above **plus** the heating curve with the current operating point, all curve setpoints, the limits, valves/pumps and the maintenance/diagnostics section.

@@ -6,7 +6,7 @@ Application 247.1 (V01).
 Reads temperatures, pump and valve states and operating modes, and writes the heating curve and
 setpoints back to the controller.
 
-> **Requires Home Assistant 2026.9 or newer**, and the built-in **Modbus** integration. The
+> **Requires Home Assistant 2026.11.0 or newer**, and the built-in **Modbus** integration. The
 > controller is always addressed on Modbus unit 254, which is fixed by Danfoss and needs no
 > configuration.
 
@@ -49,8 +49,8 @@ re-add it.
 
 ## Current pre-release
 
-The **1.2.0** line is a testing build: it moves the integration onto Home Assistant's own Modbus
-integration and requires **2026.9 or newer**. See the
+The **1.2.x** line moves the integration onto Home Assistant's own Modbus integration and requires
+**Home Assistant 2026.11.0 or newer**. See the
 [releases page](https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/releases) for the
 changelog and install notes for the beta.
 

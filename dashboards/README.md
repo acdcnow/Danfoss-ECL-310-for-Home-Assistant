@@ -1,7 +1,7 @@
 # Dashboard
 
-A ready-to-use Lovelace dashboard for the `danfoss_ecl310` integration, built for
-**Home Assistant 2026.9** (`sections` view).
+A ready-to-use Lovelace dashboard for the `danfoss_ecl310` integration, built for the **sections**
+view (Home Assistant 2026.11 or newer, which the integration requires anyway).
 
 Two views in one file, switched with a helper:
 
@@ -26,8 +26,8 @@ Two views in one file, switched with a helper:
 
 ## Requirements
 
-* Home Assistant **2026.9** or newer - the dashboard uses the `sections` view,
-  card `grid_options`, section `visibility` and the tile features `bar-gauge`,
+* Home Assistant **2026.11** or newer (the integration's own minimum) - the dashboard uses the
+  `sections` view, card `grid_options`, section `visibility` and the tile features `bar-gauge`,
   `trend-graph` and `numeric-input`.
 * The HACS frontend card **[plotly-graph-card](https://github.com/dbuezas/lovelace-plotly-graph-card)**
   for the expert section "Heating curve". Everything else is built-in.
@@ -171,8 +171,9 @@ Two different things, and only one of them is a problem with the dashboard:
 * **No template sensors are needed** either - every value comes from the integration, so the only
   helper is `input_boolean.expert_mode`. (Older versions of this guide installed three template
   entities; the dashboard no longer uses them, you can delete them.)
-* The tile features `bar-gauge`, `trend-graph` and `numeric-input` and the section `visibility` are
-  2026.9 features; on older Home Assistant the tiles fall back to plain cards without their gauges.
+* The tile features `bar-gauge`, `trend-graph` and `numeric-input` and the section `visibility`
+  arrived in advance of 2026.9; on a Home Assistant without them the tiles fall back to plain cards
+  without their gauges.
 * The `System:` sensors are **disabled by default** by the integration. Enable them once under
   **Settings → Devices & Services → Entities** if you want the *Maintenance & diagnostics* section to
   show a serial number, firmware and so on.

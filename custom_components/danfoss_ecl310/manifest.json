@@ -1,7 +1,8 @@
 {
   "domain": "danfoss_ecl310",
   "name": "Danfoss ECL 310",
-  "version": "1.2.2",
+  "version": "1.2.3",
+  "categories": ["climate.thermostats_heating"],
   "documentation": "https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant",
   "issue_tracker": "https://github.com/acdcnow/Danfoss-ECL-310-for-Home-Assistant/issues",
   "codeowners": [

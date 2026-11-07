@@ -4,6 +4,34 @@ All notable changes to this integration are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project uses
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2026-11-07
+
+### Fixed
+
+- **`Limit: Summer Cutout` was shown ten times too small** - `20 °C` on the controller appeared as
+  `2.0 °C`. The limit is a **whole-degree** value in the range `0...50`, with `0` meaning **OFF**,
+  not a tenth-degree setpoint, so it must not be multiplied by `0.1`. It now uses `scale: 1` and
+  shows the value the controller's display shows.
+
+### Changed
+
+- **`Limit: Summer Cutout` now reads register `11180`** instead of `11178`. Danfoss documents the
+  parameter as `11179`; `11180` is the address that answers the cut-out on the controller this
+  integration was verified against.
+- `Limit: Summer Cutout` no longer suggests one decimal place and is no longer decoded as a signed
+  register: the limit cannot go below `0`, so the state is the plain whole-degree reading.
+- **The minimum Home Assistant version is now 2026.11.0** (`hacs.json`). 1.2.0–1.2.2 required
+  2026.9.0.
+- **Setup and unload follow the 2026.11 config entry API.** `async_setup_entry` and
+  `async_unload_entry` return `None`; a platform that cannot be unloaded raises through
+  `async_unload_platforms_or_raise` instead of reporting a bare `False`.
+- **The controller device is registered with `async_get_or_create_from_info`.** `DeviceInfo` and
+  `ChildDeviceInfo` are dataclasses in 2026.11, so the controller's `DeviceInfo` is passed whole
+  rather than unpacked into keyword arguments, and an identity register the controller did not
+  answer is now left unset instead of being written as `None`.
+- **The manifest declares the integration category `climate.thermostats_heating`**, so the
+  integration is browsable under *Climate › Thermostats & heating*.
+
 ## [1.2.2] - 2026-10-09
 
 ### Fixed

@@ -1,5 +1,5 @@
 # =============================================================================
-#  Danfoss ECL 310 - Lovelace dashboard (sections view, Home Assistant 2026.9)
+#  Danfoss ECL 310 - Lovelace dashboard (sections view, Home Assistant 2026.11)
 # -----------------------------------------------------------------------------
 #  Requires: the custom integration `danfoss_ecl310` and the helpers in
 #            dashboards/ecl310-helpers.yaml (input_boolean.expert_mode + 3

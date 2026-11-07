@@ -109,7 +109,7 @@ class DanfossRuntimeData:
 DanfossConfigEntry = ConfigEntry[DanfossRuntimeData]
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: DanfossConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: DanfossConfigEntry) -> None:
     """Set up a Danfoss ECL 310 from a config entry."""
     unit = async_get_unit(
         hass,
@@ -133,10 +133,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: DanfossConfigEntry) -> b
     settings = coordinators["settings"]
 
     # The controller itself carries the identity and nothing else; it is the
-    # parent of the group devices, which hold all the entities.
-    controller = dr.async_get(hass).async_get_or_create(
+    # parent of the group devices, which hold all the entities. ``DeviceInfo``
+    # is a dataclass since Home Assistant 2026.11, so it is handed over whole
+    # instead of being unpacked into keyword arguments.
+    controller = dr.async_get(hass).async_get_or_create_from_info(
         config_entry_id=entry.entry_id,
-        **_controller_device_info(entry, settings.data),
+        device_info=_controller_device_info(entry, settings.data),
     )
 
     entry.runtime_data = DanfossRuntimeData(
@@ -148,17 +150,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: DanfossConfigEntry) -> b
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: DanfossConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: DanfossConfigEntry) -> None:
     """Unload a config entry.
 
     There is nothing to tear down here: the connection belongs to the ``modbus``
     integration, which closes it once the last entry holding a unit on it
-    unloads.
+    unloads. A platform that cannot be unloaded raises a translated
+    ``ConfigEntryError`` instead of the caller having to check a ``False``.
     """
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    await hass.config_entries.async_unload_platforms_or_raise(entry, PLATFORMS)
 
 
 def _controller_device_info(
@@ -175,16 +177,23 @@ def _controller_device_info(
     firmware = data.get("system_firmware")
     hardware = data.get("system_hardware")
 
-    return dr.DeviceInfo(
+    device_info = dr.DeviceInfo(
         identifiers={(DOMAIN, entry.entry_id)},
         name=entry.title,
         manufacturer=MANUFACTURER,
         model=MODEL,
-        serial_number=None if serial_number is None else str(serial_number),
-        sw_version=None if firmware is None else f"{firmware >> 8}.{firmware & 0xFF:02d}",
-        hw_version=None if hardware is None else f"Rev {hardware}",
         configuration_url=f"http://{entry.data[CONF_HOST]}",
     )
+    # Since Home Assistant 2026.11 a field left unset stays ``UNDEFINED``, while
+    # ``None`` is a value like any other and would be written to the registry. A
+    # register the controller did not answer is therefore omitted, not cleared.
+    if serial_number is not None:
+        device_info.serial_number = str(serial_number)
+    if firmware is not None:
+        device_info.sw_version = f"{firmware >> 8}.{firmware & 0xFF:02d}"
+    if hardware is not None:
+        device_info.hw_version = f"Rev {hardware}"
+    return device_info
 
 
 def _group_device_info(
