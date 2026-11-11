@@ -38,6 +38,13 @@ Sensor configuration keys
     Optional callable applied to the raw value, overriding ``scale``.
     Used for values that are not a plain scalar, such as the packed
     firmware revision.
+``count``
+    Number of consecutive registers the value spans. ``2`` reads a 32-bit
+    value, high word first. Defaults to ``1``.
+``state_class``
+    Passed straight to the entity (``measurement`` or ``total_increasing``).
+``device_group``
+    Names the child device explicitly, overriding the default grouping.
 """
 
 from __future__ import annotations
@@ -124,8 +131,10 @@ def device_group_for_sensor(config: Mapping[str, Any]) -> str:
     Pumps have a device of their own. Diagnostic entities - the limits, the
     setpoint read-backs and the system information - are kept together so they
     can be tucked away. Everything else is a live reading and goes with the
-    sensors.
+    sensors. An entry can name its device explicitly with ``device_group``.
     """
+    if (group := config.get("device_group")) is not None:
+        return group
     if config["key"] in PUMP_KEYS:
         return GROUP_PUMPS
     if config.get("entity_category") is EntityCategory.DIAGNOSTIC:

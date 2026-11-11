@@ -14,6 +14,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - **The setup checks the controller's application key and subtype** (registers 2060 / 2061) when a
   profile declares an expected value, and refuses a mismatch. `A247.1` declares none, so it behaves as
   before.
+- **32-bit register values.** A register reference can span several registers (`count: 2`, high word
+  first), block planning and decoding handle it, and sensors can carry a `state_class`
+  (`total_increasing` for an energy meter). Existing entries are unaffected: they all use one register.
+- **Per-entity devices.** An entry can name its device with `device_group`; the movement sensors and the
+  number entities honour it. Without it the grouping is unchanged.
 
 ### Changed
 

@@ -24,6 +24,7 @@ from .const import (
     DEFAULT_INTERVAL_SETTINGS,
     DEFAULT_INTERVAL_STATUS,
     DEFAULT_INTERVAL_TEMPERATURE,
+    GROUP_SENSORS,
     NUMBER_ENTITIES,
     SENSORS_SETTINGS,
     SENSORS_STATUS,
@@ -31,11 +32,12 @@ from .const import (
 )
 
 #: Valve travel is derived from the two per-valve status registers, so it is not
-#: a register of its own. Entries are ``(name, opening key, closing key)``.
-MOVEMENT_SENSORS: Final[tuple[tuple[str, str, str], ...]] = (
-    ("M1 Movement", "valve_m1_opening", "valve_m1_closing"),
-    ("M2 Movement", "valve_m2_opening", "valve_m2_closing"),
-    ("M3 Movement", "valve_m3_opening", "valve_m3_closing"),
+#: a register of its own. Entries are ``(name, opening key, closing key,
+#: device group)``.
+MOVEMENT_SENSORS: Final[tuple[tuple[str, str, str, str], ...]] = (
+    ("M1 Movement", "valve_m1_opening", "valve_m1_closing", GROUP_SENSORS),
+    ("M2 Movement", "valve_m2_opening", "valve_m2_closing", GROUP_SENSORS),
+    ("M3 Movement", "valve_m3_opening", "valve_m3_closing", GROUP_SENSORS),
 )
 
 
@@ -50,7 +52,7 @@ class Application:
     sensors_temperature: list[dict[str, Any]]
     sensors_settings: list[dict[str, Any]]
     numbers: list[dict[str, Any]]
-    movement_sensors: tuple[tuple[str, str, str], ...] = MOVEMENT_SENSORS
+    movement_sensors: tuple[tuple[str, str, str, str], ...] = MOVEMENT_SENSORS
     #: Value of register 2060 / 2061 the controller reports for this
     #: application. ``None`` means "do not check", which keeps the behaviour of
     #: the original A247.1 setup untouched.

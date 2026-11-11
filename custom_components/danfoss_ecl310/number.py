@@ -69,7 +69,9 @@ class DanfossNumber(CoordinatorEntity[DanfossCoordinator], NumberEntity):
 
         self._attr_name = config["name"]
         self._attr_unique_id = f"{entry.entry_id}_number_{self._address}"
-        self._attr_device_info = runtime.device_info[GROUP_CONTROLS]
+        self._attr_device_info = runtime.device_info[
+            config.get("device_group", GROUP_CONTROLS)
+        ]
         self._attr_native_min_value = config["min"]
         self._attr_native_max_value = config["max"]
         self._attr_native_step = config["step"]
