@@ -38,6 +38,13 @@ Sensor configuration keys
     Optional callable applied to the raw value, overriding ``scale``.
     Used for values that are not a plain scalar, such as the packed
     firmware revision.
+``count``
+    Number of consecutive registers the value spans. ``2`` reads a 32-bit
+    value, high word first. Defaults to ``1``.
+``state_class``
+    Passed straight to the entity (``measurement`` or ``total_increasing``).
+``device_group``
+    Names the child device explicitly, overriding the default grouping.
 """
 
 from __future__ import annotations
@@ -60,6 +67,20 @@ DEFAULT_PORT: Final = 502
 #: a constant here rather than a config flow option.
 DEFAULT_UNIT_ID: Final = 254
 
+#: Config entry key holding the selected ECL application. Entries created before
+#: the application became selectable do not have it and are treated as
+#: :data:`DEFAULT_APPLICATION`, so nothing changes for existing installs.
+CONF_APPLICATION: Final = "application"
+
+APPLICATION_A247_1: Final = "a247_1"
+APPLICATION_P330_7: Final = "p330_7"
+DEFAULT_APPLICATION: Final = APPLICATION_A247_1
+
+#: Holding registers that identify the application key loaded on the controller
+#: (``330`` for P330) and its subtype (``7`` for P330.7).
+APP_KEY_REGISTER: Final = 2060
+APP_SUBTYPE_REGISTER: Final = 2061
+
 # Polling intervals, in seconds.
 DEFAULT_INTERVAL_STATUS: Final = 30
 DEFAULT_INTERVAL_TEMPERATURE: Final = 60
@@ -77,6 +98,13 @@ MAX_BLOCK_LENGTH: Final = 100
 GROUP_CONTROLS: Final = "controls"
 GROUP_SENSORS: Final = "sensors"
 GROUP_PUMPS: Final = "pumps"
+GROUP_METERS: Final = "meters"
+#: Applications with several circuits (P330.7) put each circuit's entities on a
+#: device of its own. A device only exists once an entity uses it, so these are
+#: not created for A247.1.
+GROUP_MASTER: Final = "master"
+GROUP_CIRCUIT_1: Final = "circuit_1"
+GROUP_CIRCUIT_2: Final = "circuit_2"
 GROUP_CONFIGURATION: Final = "configuration"
 GROUP_DIAGNOSTICS: Final = "diagnostics"
 
@@ -85,6 +113,10 @@ GROUP_NAMES: Final[dict[str, str]] = {
     GROUP_CONTROLS: "Controls",
     GROUP_SENSORS: "Sensors",
     GROUP_PUMPS: "Pumps",
+    GROUP_METERS: "Meters",
+    GROUP_MASTER: "Master Circuit",
+    GROUP_CIRCUIT_1: "Heating Circuit 1",
+    GROUP_CIRCUIT_2: "Heating Circuit 2",
     GROUP_CONFIGURATION: "Configuration",
     GROUP_DIAGNOSTICS: "Diagnostics",
 }
@@ -111,8 +143,10 @@ def device_group_for_sensor(config: Mapping[str, Any]) -> str:
     Pumps have a device of their own. Diagnostic entities - the limits, the
     setpoint read-backs and the system information - are kept together so they
     can be tucked away. Everything else is a live reading and goes with the
-    sensors.
+    sensors. An entry can name its device explicitly with ``device_group``.
     """
+    if (group := config.get("device_group")) is not None:
+        return group
     if config["key"] in PUMP_KEYS:
         return GROUP_PUMPS
     if config.get("entity_category") is EntityCategory.DIAGNOSTIC:

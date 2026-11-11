@@ -5,6 +5,7 @@
     },
     "error": {
       "cannot_connect": "Verbindung fehlgeschlagen",
+      "application_mismatch": "Der Regler verwendet eine andere Applikation als die ausgewählte",
       "unknown": "Unerwarteter Fehler"
     },
     "step": {
@@ -14,6 +15,7 @@
         "data": {
           "host": "IP Adresse",
           "port": "Port",
+          "application": "Applikation",
           "name": "Name (z.B. ECL 1)"
         }
       },

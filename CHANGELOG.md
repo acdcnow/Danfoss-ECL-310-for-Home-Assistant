@@ -4,6 +4,37 @@ All notable changes to this integration are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project uses
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Selectable application.** The setup form has a new **Application** field. The register map is
+  now a profile in the new `applications.py`; sensors, numbers and valve movement sensors are created
+  from the profile of the entry. `A247.1` is the default and keeps the existing register map unchanged.
+- **The setup checks the controller's application key and subtype** (registers 2060 / 2061) when a
+  profile declares an expected value, and refuses a mismatch. `A247.1` declares none, so it behaves as
+  before.
+- **32-bit register values.** A register reference can span several registers (`count: 2`, high word
+  first), block planning and decoding handle it, and sensors can carry a `state_class`
+  (`total_increasing` for an energy meter). Existing entries are unaffected: they all use one register.
+- **Per-entity devices.** An entry can name its device with `device_group`; the movement sensors and the
+  number entities honour it. Without it the grouping is unchanged.
+- **P330.7 profile** for a master circuit with two heating circuits as sub-circuits (no DHW),
+  selectable in the setup form. Its entities are grouped on `Master Circuit`, `Heating Circuit 1` and
+  `Heating Circuit 2` devices: temperatures S1/S3/S4/S5/S9 (S6/S7 and the ECA room sensor are optional
+  and disabled by default), modes, pumps P1-P3, valves M1-M3 with movement sensors, limits and
+  read-backs, heat curves and slopes, and writable comfort/setback room setpoints for both heating
+  circuits. The M-Bus energy meters 1 and 2 are on a `Meters` device, the system information includes
+  the application version and subtype, and the serial number is the 32-bit value in registers 35 and
+  36 (323790 on the test controller). Register addresses follow the Danfoss P330 parameter table
+  (ID - 1) and Danfoss's communication description, and were read back from a P330.7 controller.
+
+### Changed
+
+- Config entries without an `application` value are treated as A247.1, so existing installs need no
+  migration and keep their entity ids.
+- Reconfigure keeps the entry's application and refuses a controller that runs a different one.
+
 ## [1.2.4] - 2026-11-07
 
 ### Fixed

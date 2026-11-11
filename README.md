@@ -7,7 +7,7 @@
 ![Danfoss ECL 310](custom_components/danfoss_ecl310/brand/logo.png)
 
 This is a custom integration for **Home Assistant** to monitor and control **Danfoss ECL310** district heating controllers via **Modbus TCP**.
-Using Application 247.1 (V01)
+Supported applications: **A247.1 (V01)** and **P330.7** (selected during setup, see [Applications](#-applications)).
 
 It supports reading temperatures, pump/valve statuses, and operating modes, as well as writing target temperatures and the heat curve back to the controller.
 
@@ -16,7 +16,33 @@ It supports reading temperatures, pump/valve statuses, and operating modes, as w
 * Home Assistant **2026.11.0** or newer.
 * The built-in **Modbus** integration (installed automatically as a dependency). It does not need any YAML configuration of its own.
 
-The controller is always addressed on Modbus unit **254**, which is fixed by Danfoss for application 247.1 and therefore is not asked for during setup.
+The controller is always addressed on Modbus unit **254**, which is fixed by Danfoss for the ECL 310 and therefore is not asked for during setup.
+
+## 🧭 Applications
+
+The ECL 310 runs one *application key* at a time, and which registers exist depends on it. The application is chosen when the entry is created:
+
+| Application | What it is | Entities |
+| --- | --- | --- |
+| **A247.1** | One heating circuit and one DHW circuit | Unchanged. This is the default, so existing installs keep working without any action. |
+| **P330.7** | A master circuit plus two heating circuits as sub-circuits, no DHW | Sensors S1, S3, S4, S5, S9 (S6/S7 optional and off by default), modes and pumps/valves, the limits and read-backs of both heating circuits and the master circuit, the heat curves and slopes, the M-Bus energy meters 1 and 2, and writable room setpoints (comfort and setback) for both heating circuits. |
+
+During setup the controller's application key (register 2060) and subtype (register 2061) are read. If they contradict a P330.7 selection, setup is refused with *The controller runs a different application than the one selected*. The application cannot be changed on an existing entry: entities are tied to the register map they were created with, so add a new entry instead.
+
+**P330.7 notes**
+
+* **Devices by circuit.** The entities are grouped by circuit instead of by function: `Master Circuit` (sensors S3/S5, pump P1, valve M1, limits), `Heating Circuit 1` and `Heating Circuit 2` (flow and return sensors, pump, valve, operating mode, setpoints, heat curve, limits and the room setpoints you can change), `Meters`, `Sensors` (outdoor temperature and the optional ECA room unit), `Diagnostics` (system information) and `Configuration` (polling intervals). Entity names therefore carry no circuit number, e.g. `sensor.ecl_1_heating_circuit_1_temp_flow_s4`.
+* The parameter blocks are `11xxx` (heating circuit 1), `12xxx` (heating circuit 2) and `15xxx` (master circuit), following the Danfoss P330 operating guide, section 7.8. A parameter ID *n* is served at the register *n - 1*; this was checked against the factory defaults of about 50 parameters on a P330.7.
+* Sensors S4/S6 are shown for heating circuit 1 and S9/S7 for heating circuit 2, with pumps P2 and P3. This matches the flow targets, which sit about 2 K below S4 and S9, the application diagram of the controller (P330_7 ex. a) and the live data of the Leanheat Monitor. The return sensors S6/S7 are optional and disabled by default; enable them if they are connected. The ECA 32 room sensors S13 and S14 (registers 10218 and 10219, taken from Danfoss's communication description; the numbering "S(n) at 10199 + n" only holds up to S12) and the room temperature of an ECA30 room unit with address A (register 10212, `Temp: Room (ECA A)`) are optional and disabled by default. S13 and S14 were not connected on the test controller: both registers read 192.00 °C there, which the controller's interface shows as "--".
+* P330.7 has three valves: M1 in the master circuit, M2 in circuit 1 and M3 in circuit 2 (application diagram on page 20 of the P330 operating guide; the Leanheat Monitor's own diagram leaves M2 out, but its manual output list, the flow temperature S4 and the status registers show that M2 is there). The manual modes of M2 and M3 are at registers 4061 and 4063 (A247.1: 4060 and 4061), taken from the manual output list of the controller's interface. The valve status registers 3999-4004 are the A247.1 ones: on a P330.7, 3999 pulsed while M1 opened, 4000 while it closed, and 4001 and 4003 pulsed as well. Which of 4001/4003 belongs to which valve follows the A247.1 layout (M2, M3) and has not been checked one valve at a time. The controller reports valve movement as pulses of about a second, so with the default polling interval the `Movement` sensors mostly show `stop`.
+* Not confirmed on a P330.7: the meaning of registers 11500 / 12500 (shown as the circuit flow targets). The heat curve registers (11399-11404 and 12399-12404) have no entry in Danfoss's parameter table, but they match the curves shown in the controller's interface.
+* Verified on a P330.7 with Home Assistant 2026.11.0: the entities are created and show the same values as the registers read directly from the controller (application key 330, subtype 7, setpoints, limits, heat curves, temperatures, meters).
+* **Energy meters:** `Meter 1` and `Meter 2` (M-Bus, configured at parameters 6000 and 6050; meters 3-5 are not used) appear on their own `Meters` device. `Energy` (kWh, total increasing, so it works in the Energy dashboard), `Power` (kW), `Flow` (l/h), `Volume` (m³) and the supply and return temperatures are read per meter. Checked on a P330.7: all six values of both meters match the "Gerätezähler" page of the Leanheat Monitor, and the energy of both meters is identical to what an existing Modbus YAML configuration reads. The monitor shows further meter data (tariff energies, operating hours, the meter's serial number) that this profile does not read.
+* **Serial number:** Danfoss's communication description lists "Serial high part" as parameter 36 and "Serial low part" as parameter 37, i.e. registers 35 and 36. On the test controller they read 4 and 61646, i.e. 323790, which is the number the controller's interface shows. The P330.7 profile reads both; the A247.1 profile still reads register 36 only and therefore shows 61646 on such a controller.
+* **Source:** most register meanings above were checked against Danfoss's *ECL Comfort 210 / 296 / 310, communication description* (section 9.5, parameter list), in addition to the P330 operating guide and the test controller: valve outputs (triacs 1-6 are parameters 4000-4005, i.e. registers 3999-4004: M1 3999/4000, M2 4001/4002, M3 4003/4004), pumps (relays 1-6 from parameter 4006), the per-output override registers (4059-4064 for triacs, 4065-4070 for relays), application info (2060-2063), the M-Bus meter layout (meter 1 at 6000, meter 2 at 6050) and the sensor registers.
+* Only the room setpoints (comfort and setback, 5...40 °C as in the controller's own interface) are writable. Everything else on P330.7 is read-only until writing it has been verified.
+* The heat curve registers (11399-11404) hold the raw curve points. The controller's interface draws them clipped to the maximum flow temperature, so `-30°C` reads 90 while the interface shows 70. The heat curve slope (register 11174 / 12174, in tenths) is read as well; both match the interface (1.1 and 1.2). Circuit 2's curve starts at register 12399; its six points (85, 67, 55, 49, 43, 31) match the interface (parameters 12400-12405).
+* Other P330 subtypes are not covered. Adding one means adding a profile in `applications.py`.
 
 ## 🚀 Version 1.2.4
 
@@ -193,7 +219,8 @@ The grouping itself lives in `const.py`: `device_group_for_sensor()` decides bet
 3. Search for **Danfoss ECL310**.
 4. Enter the **IP Address** of your controller.
 5. Enter the **Port** (Default is `502`).
-6. Click Submit.
+6. Select the **Application** that is loaded on your controller (default `A247.1`).
+7. Click Submit.
 
 The connection is verified before the entry is created, so a wrong IP is reported as *Failed to connect* rather than creating a broken device.
 
@@ -237,7 +264,7 @@ Want to look first? Open [`dashboards/preview/index.html`](dashboards/preview/in
 
 ## 🛠️ Advanced: Adjusting Sensors (`const.py`)
 
-This integration is designed to be easily extensible. All register mappings are defined in `const.py`. You do not need to touch the complex logic code to add a new sensor.
+This integration is designed to be easily extensible. The A247.1 register mappings are defined in `const.py`, and the P330.7 profile in `applications.py`, which also collects the profiles. You do not need to touch the complex logic code to add a new sensor. The steps below describe A247.1.
 
 ### How to add or modify a sensor:
 
@@ -337,7 +364,8 @@ The language is automatically selected based on your Home Assistant user profile
 | --- | --- |
 | `__init__.py` | Entry setup, the three coordinators, and the controller and group devices. |
 | `device.py` | Everything that knows the controller's registers. No Home Assistant imports, so it is testable against a mock bus. |
-| `const.py` | The declarative register and entity map, including which device each entity belongs on. |
+| `const.py` | The declarative A247.1 register and entity map, including which device each entity belongs on. |
+| `applications.py` | The application profiles (A247.1, P330.7): which entities each application exposes. |
 | `sensor.py` / `number.py` | The entities. |
 | `config_flow.py` | Setup and reconfigure flows. |
 | `brand/` | The integration's own icon and logo. Home Assistant reads these directly, so no entry in the brands repository is needed. |

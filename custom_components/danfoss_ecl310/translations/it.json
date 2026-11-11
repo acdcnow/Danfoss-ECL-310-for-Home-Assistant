@@ -5,6 +5,7 @@
     },
     "error": {
       "cannot_connect": "Connessione fallita",
+      "application_mismatch": "Il regolatore usa un'applicazione diversa da quella selezionata",
       "unknown": "Errore imprevisto"
     },
     "step": {
@@ -14,6 +15,7 @@
         "data": {
           "host": "Indirizzo IP",
           "port": "Porta",
+          "application": "Applicazione",
           "name": "Nome (es. ECL 1)"
         }
       },
