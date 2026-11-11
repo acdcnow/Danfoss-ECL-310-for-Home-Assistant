@@ -19,6 +19,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   (`total_increasing` for an energy meter). Existing entries are unaffected: they all use one register.
 - **Per-entity devices.** An entry can name its device with `device_group`; the movement sensors and the
   number entities honour it. Without it the grouping is unchanged.
+- **P330.7 profile** for a master circuit with two heating circuits as sub-circuits (no DHW),
+  selectable in the setup form. Its entities are grouped on `Master Circuit`, `Heating Circuit 1` and
+  `Heating Circuit 2` devices: temperatures S1/S3/S4/S5/S9 (S6/S7 and the ECA room sensor are optional
+  and disabled by default), modes, pumps P1-P3, valves M1-M3 with movement sensors, limits and
+  read-backs, heat curves and slopes, and writable comfort/setback room setpoints for both heating
+  circuits. The M-Bus energy meters 1 and 2 are on a `Meters` device, the system information includes
+  the application version and subtype, and the serial number is the 32-bit value in registers 35 and
+  36 (323790 on the test controller). Register addresses follow the Danfoss P330 parameter table
+  (ID - 1) and Danfoss's communication description, and were read back from a P330.7 controller.
 
 ### Changed
 

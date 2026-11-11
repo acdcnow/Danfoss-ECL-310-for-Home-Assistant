@@ -73,6 +73,7 @@ DEFAULT_UNIT_ID: Final = 254
 CONF_APPLICATION: Final = "application"
 
 APPLICATION_A247_1: Final = "a247_1"
+APPLICATION_P330_7: Final = "p330_7"
 DEFAULT_APPLICATION: Final = APPLICATION_A247_1
 
 #: Holding registers that identify the application key loaded on the controller
@@ -97,6 +98,13 @@ MAX_BLOCK_LENGTH: Final = 100
 GROUP_CONTROLS: Final = "controls"
 GROUP_SENSORS: Final = "sensors"
 GROUP_PUMPS: Final = "pumps"
+GROUP_METERS: Final = "meters"
+#: Applications with several circuits (P330.7) put each circuit's entities on a
+#: device of its own. A device only exists once an entity uses it, so these are
+#: not created for A247.1.
+GROUP_MASTER: Final = "master"
+GROUP_CIRCUIT_1: Final = "circuit_1"
+GROUP_CIRCUIT_2: Final = "circuit_2"
 GROUP_CONFIGURATION: Final = "configuration"
 GROUP_DIAGNOSTICS: Final = "diagnostics"
 
@@ -105,6 +113,10 @@ GROUP_NAMES: Final[dict[str, str]] = {
     GROUP_CONTROLS: "Controls",
     GROUP_SENSORS: "Sensors",
     GROUP_PUMPS: "Pumps",
+    GROUP_METERS: "Meters",
+    GROUP_MASTER: "Master Circuit",
+    GROUP_CIRCUIT_1: "Heating Circuit 1",
+    GROUP_CIRCUIT_2: "Heating Circuit 2",
     GROUP_CONFIGURATION: "Configuration",
     GROUP_DIAGNOSTICS: "Diagnostics",
 }
