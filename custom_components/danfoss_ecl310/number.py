@@ -21,7 +21,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import DanfossCoordinator, DanfossRuntimeData
-from .const import DOMAIN, GROUP_CONFIGURATION, GROUP_CONTROLS, INTERVAL_ENTITIES, NUMBER_ENTITIES
+from .const import DOMAIN, GROUP_CONFIGURATION, GROUP_CONTROLS, INTERVAL_ENTITIES
 from .device import DanfossEcl310
 
 
@@ -35,7 +35,7 @@ async def async_setup_entry(
 
     entities: list[NumberEntity] = [
         DanfossNumber(runtime.status, runtime.device, config, entry)
-        for config in NUMBER_ENTITIES
+        for config in runtime.application.numbers
     ]
     entities.extend(
         DanfossIntervalNumber(runtime.coordinator(config["coordinator"]), config, entry)

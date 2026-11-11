@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Final
+from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
@@ -11,15 +11,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import DanfossCoordinator, DanfossRuntimeData
-from .const import GROUP_SENSORS, SENSOR_GROUPS, device_group_for_sensor
-
-#: Valve travel is derived from the two per-valve status registers, so it is not
-#: a register of its own.
-MOVEMENT_SENSORS: Final[tuple[tuple[str, str, str], ...]] = (
-    ("M1 Movement", "valve_m1_opening", "valve_m1_closing"),
-    ("M2 Movement", "valve_m2_opening", "valve_m2_closing"),
-    ("M3 Movement", "valve_m3_opening", "valve_m3_closing"),
-)
+from .const import GROUP_SENSORS, device_group_for_sensor
 
 
 async def async_setup_entry(
@@ -37,12 +29,12 @@ async def async_setup_entry(
             entry,
             device_group_for_sensor(config),
         )
-        for group, configs, _ in SENSOR_GROUPS
+        for group, configs, _ in runtime.application.sensor_groups
         for config in configs
     ]
     entities.extend(
         DanfossMovementSensor(runtime.status, name, opening, closing, entry)
-        for name, opening, closing in MOVEMENT_SENSORS
+        for name, opening, closing in runtime.application.movement_sensors
     )
 
     async_add_entities(entities)

@@ -60,6 +60,19 @@ DEFAULT_PORT: Final = 502
 #: a constant here rather than a config flow option.
 DEFAULT_UNIT_ID: Final = 254
 
+#: Config entry key holding the selected ECL application. Entries created before
+#: the application became selectable do not have it and are treated as
+#: :data:`DEFAULT_APPLICATION`, so nothing changes for existing installs.
+CONF_APPLICATION: Final = "application"
+
+APPLICATION_A247_1: Final = "a247_1"
+DEFAULT_APPLICATION: Final = APPLICATION_A247_1
+
+#: Holding registers that identify the application key loaded on the controller
+#: (``330`` for P330) and its subtype (``7`` for P330.7).
+APP_KEY_REGISTER: Final = 2060
+APP_SUBTYPE_REGISTER: Final = 2061
+
 # Polling intervals, in seconds.
 DEFAULT_INTERVAL_STATUS: Final = 30
 DEFAULT_INTERVAL_TEMPERATURE: Final = 60

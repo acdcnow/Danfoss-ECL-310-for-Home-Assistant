@@ -24,15 +24,16 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+from .applications import APPLICATIONS, Application
 from .const import (
+    CONF_APPLICATION,
+    DEFAULT_APPLICATION,
     DEFAULT_UNIT_ID,
     DOMAIN,
     GROUP_NAMES,
     GROUPS,
     MANUFACTURER,
     MODEL,
-    NUMBER_ENTITIES,
-    SENSOR_GROUPS,
 )
 from .device import HOLDING, DanfossEcl310, RegisterRef, build_register_refs
 
@@ -40,12 +41,26 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: Final[list[Platform]] = [Platform.NUMBER, Platform.SENSOR]
 
-#: The writable setpoints are polled alongside the status registers so the
-#: sliders follow the controller promptly.
-NUMBER_REFS: Final[tuple[RegisterRef, ...]] = tuple(
-    RegisterRef(key=config["key"], address=config["address"], space=HOLDING)
-    for config in NUMBER_ENTITIES
-)
+
+def _number_refs(application: Application) -> tuple[RegisterRef, ...]:
+    """Register references for the writable setpoints of an application.
+
+    The setpoints are polled alongside the status registers so the sliders
+    follow the controller promptly.
+    """
+    return tuple(
+        RegisterRef(key=config["key"], address=config["address"], space=HOLDING)
+        for config in application.numbers
+    )
+
+
+def get_application(entry: ConfigEntry) -> Application:
+    """Return the application profile an entry was set up for.
+
+    Entries created before the application became selectable carry no
+    ``application`` value and are, by definition, A247.1.
+    """
+    return APPLICATIONS[entry.data.get(CONF_APPLICATION, DEFAULT_APPLICATION)]
 
 
 class DanfossCoordinator(DataUpdateCoordinator[dict[str, int | None]]):
@@ -93,6 +108,8 @@ class DanfossRuntimeData:
     """Objects the entity platforms read from."""
 
     device: DanfossEcl310
+    #: The register map this entry was set up with.
+    application: Application
     #: Device information per entity group. Every entry is a child device of the
     #: controller, which the entity platform creates on its own.
     device_info: Mapping[str, dr.ChildDeviceInfo]
@@ -118,12 +135,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: DanfossConfigEntry) -> N
         DEFAULT_UNIT_ID,
     )
     device = DanfossEcl310(unit)
+    application = get_application(entry)
 
     coordinators: dict[str, DanfossCoordinator] = {}
-    for name, configs, interval in SENSOR_GROUPS:
+    for name, configs, interval in application.sensor_groups:
         refs = build_register_refs(configs)
         if name == "status":
-            refs.extend(NUMBER_REFS)
+            refs.extend(_number_refs(application))
         coordinator = DanfossCoordinator(hass, entry, device, refs, name, interval)
         # Raises ConfigEntryNotReady if the controller cannot be reached, so
         # Home Assistant retries setup instead of creating dead entities.
@@ -143,6 +161,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: DanfossConfigEntry) -> N
 
     entry.runtime_data = DanfossRuntimeData(
         device=device,
+        application=application,
         device_info=_group_device_info(entry, controller.id),
         status=coordinators["status"],
         temperature=coordinators["temperature"],

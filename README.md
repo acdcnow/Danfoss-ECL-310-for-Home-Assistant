@@ -193,7 +193,8 @@ The grouping itself lives in `const.py`: `device_group_for_sensor()` decides bet
 3. Search for **Danfoss ECL310**.
 4. Enter the **IP Address** of your controller.
 5. Enter the **Port** (Default is `502`).
-6. Click Submit.
+6. Select the **Application** that is loaded on your controller (default `A247.1`).
+7. Click Submit.
 
 The connection is verified before the entry is created, so a wrong IP is reported as *Failed to connect* rather than creating a broken device.
 
@@ -338,6 +339,7 @@ The language is automatically selected based on your Home Assistant user profile
 | `__init__.py` | Entry setup, the three coordinators, and the controller and group devices. |
 | `device.py` | Everything that knows the controller's registers. No Home Assistant imports, so it is testable against a mock bus. |
 | `const.py` | The declarative register and entity map, including which device each entity belongs on. |
+| `applications.py` | The application profiles: which entities each application exposes. |
 | `sensor.py` / `number.py` | The entities. |
 | `config_flow.py` | Setup and reconfigure flows. |
 | `brand/` | The integration's own icon and logo. Home Assistant reads these directly, so no entry in the brands repository is needed. |

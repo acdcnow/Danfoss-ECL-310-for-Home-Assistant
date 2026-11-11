@@ -4,6 +4,23 @@ All notable changes to this integration are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project uses
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Selectable application.** The setup form has a new **Application** field. The register map is
+  now a profile in the new `applications.py`; sensors, numbers and valve movement sensors are created
+  from the profile of the entry. `A247.1` is the default and keeps the existing register map unchanged.
+- **The setup checks the controller's application key and subtype** (registers 2060 / 2061) when a
+  profile declares an expected value, and refuses a mismatch. `A247.1` declares none, so it behaves as
+  before.
+
+### Changed
+
+- Config entries without an `application` value are treated as A247.1, so existing installs need no
+  migration and keep their entity ids.
+- Reconfigure keeps the entry's application and refuses a controller that runs a different one.
+
 ## [1.2.4] - 2026-11-07
 
 ### Fixed
