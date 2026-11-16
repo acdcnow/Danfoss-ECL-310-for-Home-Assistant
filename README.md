@@ -2,7 +2,7 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![Maintainer](https://img.shields.io/badge/maintainer-acdcnow-blue)](https://github.com/acdcnow)
-[![Version](https://img.shields.io/badge/version-1.3.0-green)]()
+[![Version](https://img.shields.io/badge/version-1.3.1-green)]()
 
 ![Danfoss ECL 310](custom_components/danfoss_ecl310/brand/logo.png)
 
@@ -43,6 +43,19 @@ During setup the controller's application key (register 2060) and subtype (regis
 * The room setpoints (comfort and setback, 5...40 °C as in the controller's own interface) and the **operating mode** of each heating circuit are writable. The mode is a `select` entity (`Mode: Operating Mode (Select)`) with the options *Schedule*, *Comfort*, *Setback* and *Frost protection* (codes 1...4 of the Danfoss communication description, section 6.4); it writes the holding register at the address the mode sensor reads (4200 for circuit 1, 4201 for circuit 2). *Manual operation* is not offered because the controller applies it to every circuit at once. Everything else on P330.7 is read-only until writing it has been verified.
 * The heat curve registers (11399-11404) hold the raw curve points. The controller's interface draws them clipped to the maximum flow temperature, so `-30°C` reads 90 while the interface shows 70. The heat curve slope (register 11174 / 12174, in tenths) is read as well; both match the interface (1.1 and 1.2). Circuit 2's curve starts at register 12399; its six points (85, 67, 55, 49, 43, 31) match the interface (parameters 12400-12405).
 * Other P330 subtypes are not covered. Adding one means adding a profile in `applications.py`.
+
+## 🚀 Version 1.3.1
+
+1.3.1 gives the measured temperatures of the P330.7 profile long-term statistics. The full list is in
+[CHANGELOG.md](CHANGELOG.md).
+
+**Fixed**
+
+* **P330.7 temperatures had no long-term statistics.** The measured temperatures (outdoor, flow, return,
+  room sensors, flow targets and the meters' supply and return temperatures) now carry
+  `state_class: measurement`, so Home Assistant keeps their mean, minimum and maximum over time. The
+  statistics start when the update is installed. The read-back settings (limits, set values, curves) are
+  not measurements and stay without. `A247.1` is unchanged.
 
 ## 🚀 Version 1.3.0
 
