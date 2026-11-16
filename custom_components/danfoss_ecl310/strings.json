@@ -38,6 +38,16 @@
     }
   },
   "entity": {
+    "select": {
+      "operating_mode": {
+        "state": {
+          "schedule": "Schedule",
+          "comfort": "Comfort",
+          "setback": "Setback",
+          "frost_protection": "Frost protection"
+        }
+      }
+    },
     "sensor": {
       "operating_mode": {
         "state": {

@@ -73,6 +73,9 @@ class Application:
     #: the original A247.1 setup untouched.
     expected_app_key: int | None = None
     expected_subtype: int | None = None
+    #: Writable choices, one select entity each (see ``select.py``). Empty by default,
+    #: so a profile without any keeps exactly the entities it had.
+    selects: tuple[dict[str, Any], ...] = ()
 
     @property
     def sensor_groups(self) -> tuple[tuple[str, list[dict[str, Any]], int], ...]:
@@ -494,6 +497,30 @@ _P330_7_NUMBERS: Final[list[dict[str, Any]]] = [
     for address in (base + offset,)
 ]
 
+#: Operating modes a single circuit can be switched to (Danfoss communication
+#: description, table 6-1). Manual operation (0) is not offered: it applies to all
+#: circuits at once. Active cooling (5) exists in A232 only.
+_OPERATING_MODE_OPTIONS: Final[dict[int, str]] = {
+    1: "schedule",
+    2: "comfort",
+    3: "setback",
+    4: "frost_protection",
+}
+
+#: The mode registers are the parameters 4201 / 4202 (circuit 1 / 2), i.e. 4200 / 4201.
+_P330_7_SELECTS: Final[tuple[dict[str, Any], ...]] = tuple(
+    {
+        "key": f"mode_circuit_{circuit}",
+        "name": "Mode: Operating Mode (Select)",
+        "address": address,
+        "trans_key": "operating_mode",
+        "options": _OPERATING_MODE_OPTIONS,
+        "icon": "mdi:radiator",
+        "device_group": group,
+    }
+    for circuit, address, group in ((1, 4200, GROUP_CIRCUIT_1), (2, 4201, GROUP_CIRCUIT_2))
+)
+
 APPLICATION_P330_7_PROFILE: Final = Application(
     key=APPLICATION_P330_7,
     name="P330.7",
@@ -501,6 +528,7 @@ APPLICATION_P330_7_PROFILE: Final = Application(
     sensors_temperature=_P330_7_TEMPERATURE,
     sensors_settings=_P330_7_SETTINGS,
     numbers=_P330_7_NUMBERS,
+    selects=_P330_7_SELECTS,
     movement_sensors=(
         ("M1 Movement", "valve_m1_opening", "valve_m1_closing", GROUP_MASTER),
         ("M2 Movement", "valve_m2_opening", "valve_m2_closing", GROUP_CIRCUIT_1),

@@ -39,7 +39,7 @@ from .device import HOLDING, DanfossEcl310, RegisterRef, build_register_refs
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: Final[list[Platform]] = [Platform.NUMBER, Platform.SENSOR]
+PLATFORMS: Final[list[Platform]] = [Platform.NUMBER, Platform.SELECT, Platform.SENSOR]
 
 
 def _number_refs(application: Application) -> tuple[RegisterRef, ...]:
