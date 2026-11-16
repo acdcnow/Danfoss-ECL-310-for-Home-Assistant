@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed
+
+- **P330.7 temperatures had no long-term statistics.** The measured temperatures (outdoor S1, flow S3/S4/S9, return S5/S6/S7, the ECA and room sensors, the accumulated outdoor temperature, the flow targets and the two meters' supply and return temperatures) now carry `state_class: measurement`, so Home Assistant keeps their mean, minimum and maximum over time instead of only the short recorder history. The read-back settings (limits, set values, curves) are not measurements and stay without. `A247.1` is unchanged.
+
 ## [1.3.0] - 2026-11-16
 
 ### Added

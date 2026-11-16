@@ -126,7 +126,11 @@ def _temperature(
     precision: int | None = 1,
     **extra: Any,
 ) -> dict[str, Any]:
-    """Describe a signed temperature input register."""
+    """Describe a signed temperature input register.
+
+    A temperature is a measurement, so Home Assistant keeps long-term statistics
+    for it. Without a ``state_class`` it only keeps the short recorder history.
+    """
     config: dict[str, Any] = {
         "key": key,
         "name": name,
@@ -136,6 +140,7 @@ def _temperature(
         "scale": scale,
         "unit": _CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
     }
     if precision is not None:
         config["precision"] = precision
@@ -146,7 +151,10 @@ def _temperature(
 def _diagnostic(
     key: str, name: str, addr: int, *, scale: float = 1, **extra: Any
 ) -> dict[str, Any]:
-    """Describe a temperature setting that is only read back."""
+    """Describe a temperature setting that is only read back.
+
+    A setting is not a measurement, so it gets no ``state_class``.
+    """
     return _temperature(
         key,
         name,
@@ -154,7 +162,7 @@ def _diagnostic(
         scale=scale,
         precision=None if scale == 1 else 1,
         entity_category=EntityCategory.DIAGNOSTIC,
-        **extra,
+        **{"state_class": None, **extra},
     )
 
 
