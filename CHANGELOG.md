@@ -36,6 +36,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   migration and keep their entity ids.
 - Reconfigure keeps the entry's application and refuses a controller that runs a different one.
 
+### Fixed
+
+- **Integration icon showed a clipped "D".** The icon was a cropped, off-centre fragment of the Danfoss logo; it is now the complete "D", centred on a transparent square with a small margin (256x256 and 512x512). `logo.png` and `dark_logo.png` are unchanged.
+
 ## [1.2.4] - 2026-11-07
 
 ### Fixed
