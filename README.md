@@ -291,6 +291,8 @@ Two files are involved:
 | `dashboards/ecl310-helpers.yaml` | The **one** helper the dashboard needs: `input_boolean.expert_mode`, the switch between the two views. No integration can create an `input_boolean`, and Lovelace cannot switch a view on something it cannot see. Install it as a package. |
 | `dashboards/ecl310-dashboard.yaml` | The dashboard itself. |
 
+For **application P330.7** there is a separate dashboard with heating-curve graphs and a live hydraulic diagram: [`dashboards/p330-7/`](dashboards/p330-7/README.md).
+
 **[→ Dashboard install guide](dashboards/README.md)** (3 steps: match the entity ids, install `dashboards/ecl310-helpers.yaml` as a package, paste `dashboards/ecl310-dashboard.yaml` into a dashboard).
 
 Want to look first? Open [`dashboards/preview/index.html`](dashboards/preview/index.html) in a browser - an offline preview with sample data, a working Standard/Expert switch and scenarios for the conditional warning cards.
