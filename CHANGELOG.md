@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-16
+
 ### Added
 
 - **Writable operating mode on P330.7.** A new `select` platform adds `Mode: Operating Mode (Select)` to heating circuits 1 and 2 with the options Schedule, Comfort, Setback and Frost protection (codes 1...4, Danfoss communication description section 6.4). It writes the holding register at the address the mode sensor reads (4200 / 4201) and shows the new choice at once; a code the selector does not offer, such as manual operation, reads as unknown. A profile lists its selects in the new `Application.selects`; `A247.1` has none, so it keeps exactly its entities.
