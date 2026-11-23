@@ -5,6 +5,7 @@
     },
     "error": {
       "cannot_connect": "Failed to connect",
+      "application_mismatch": "The controller runs a different application than the one selected",
       "unknown": "Unexpected error"
     },
     "step": {
@@ -14,6 +15,7 @@
         "data": {
           "host": "IP address",
           "port": "Port",
+          "application": "Application",
           "name": "Name (e.g. ECL 1)"
         }
       },

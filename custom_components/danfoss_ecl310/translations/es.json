@@ -5,6 +5,7 @@
     },
     "error": {
       "cannot_connect": "Fallo de conexión",
+      "application_mismatch": "El controlador usa una aplicación distinta de la seleccionada",
       "unknown": "Error inesperado"
     },
     "step": {
@@ -14,6 +15,7 @@
         "data": {
           "host": "Dirección IP",
           "port": "Puerto",
+          "application": "Aplicación",
           "name": "Nombre (ej. ECL 1)"
         }
       },

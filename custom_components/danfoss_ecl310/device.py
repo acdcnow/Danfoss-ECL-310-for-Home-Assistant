@@ -39,11 +39,25 @@ class RegisterRef:
     address: int
     space: str
     signed: bool = False
+    #: How many consecutive registers the value spans. ``2`` is a 32-bit value
+    #: with the high word first, as used by the energy meters.
+    length: int = 1
 
 
 def decode_signed(word: int) -> int:
     """Decode a raw register as a two's-complement int16."""
     return word - 0x10000 if word > 0x7FFF else word
+
+
+def decode_words(words: Sequence[int], *, signed: bool = False) -> int:
+    """Combine consecutive registers into one value, high word first."""
+    value = 0
+    for word in words:
+        value = (value << 16) | word
+    bits = 16 * len(words)
+    if signed and bits and value >= 1 << (bits - 1):
+        value -= 1 << bits
+    return value
 
 
 def encode_signed(value: int) -> int:
@@ -65,6 +79,7 @@ def build_register_refs(
             address=config["addr"],
             space=config.get("type", HOLDING),
             signed=bool(config.get("signed", False)),
+            length=int(config.get("count", 1)),
         )
         for config in configs
         if wanted is None or config["key"] in wanted
@@ -79,7 +94,8 @@ def plan_block_reads(
     The controller answers one request at a time, so reading five neighbouring
     registers as one block instead of five requests cuts a poll cycle
     substantially. Runs never cross a register space and never exceed
-    :data:`~.const.MAX_BLOCK_LENGTH` registers.
+    :data:`~.const.MAX_BLOCK_LENGTH` registers. A multi-register value counts
+    with its full length.
     """
     blocks: list[tuple[str, int, list[RegisterRef]]] = []
     for space in (INPUT, HOLDING):
@@ -89,8 +105,9 @@ def plan_block_reads(
         current: list[RegisterRef] = []
         for ref in ordered:
             if current and (
-                ref.address != current[-1].address + 1
-                or len(current) >= MAX_BLOCK_LENGTH
+                ref.address != current[-1].address + current[-1].length
+                or sum(item.length for item in current) + ref.length
+                > MAX_BLOCK_LENGTH
             ):
                 blocks.append((space, current[0].address, current))
                 current = []
@@ -127,29 +144,32 @@ class DanfossEcl310:
         answered = 0
 
         for space, address, block in plan_block_reads(refs):
+            count = block[-1].address + block[-1].length - address
             try:
-                raw = await self._async_read(space, address, len(block))
+                raw = await self._async_read(space, address, count)
             except ModbusError as err:
                 _LOGGER.debug("Block read %s@%s failed: %s", space, address, err)
                 errors.append(err)
                 raw = []
 
-            if len(raw) != len(block):
+            if len(raw) != count:
                 if raw:
                     _LOGGER.warning(
                         "Block read %s@%s returned %s of %s registers",
                         space,
                         address,
                         len(raw),
-                        len(block),
+                        count,
                     )
                 for ref in block:
                     values[ref.key] = None
                 continue
 
             answered += 1
-            for ref, word in zip(block, raw, strict=True):
-                values[ref.key] = decode_signed(word) if ref.signed else word
+            for ref in block:
+                start = ref.address - address
+                words = raw[start : start + ref.length]
+                values[ref.key] = decode_words(words, signed=ref.signed)
 
         if not answered:
             # Nothing at all came back: the link is down or the controller is
