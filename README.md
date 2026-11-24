@@ -2,7 +2,7 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![Maintainer](https://img.shields.io/badge/maintainer-acdcnow-blue)](https://github.com/acdcnow)
-[![Version](https://img.shields.io/badge/version-1.2.4-green)]()
+[![Version](https://img.shields.io/badge/version-1.3.2-green)]()
 
 ![Danfoss ECL 310](custom_components/danfoss_ecl310/brand/logo.png)
 
@@ -25,7 +25,7 @@ The ECL 310 runs one *application key* at a time, and which registers exist depe
 | Application | What it is | Entities |
 | --- | --- | --- |
 | **A247.1** | One heating circuit and one DHW circuit | Unchanged. This is the default, so existing installs keep working without any action. |
-| **P330.7** | A master circuit plus two heating circuits as sub-circuits, no DHW | Sensors S1, S3, S4, S5, S9 (S6/S7 optional and off by default), modes and pumps/valves, the limits and read-backs of both heating circuits and the master circuit, the heat curves and slopes, the M-Bus energy meters 1 and 2, and writable room setpoints (comfort and setback) for both heating circuits. |
+| **P330.7** | A master circuit plus two heating circuits as sub-circuits, no DHW | Sensors S1, S3, S4, S5, S9 (S6/S7 optional and off by default), modes and pumps/valves, the limits and read-backs of both heating circuits and the master circuit, the heat curves and slopes, the M-Bus energy meters 1 and 2, and writable room setpoints (comfort and setback) and a writable operating mode for both heating circuits. |
 
 During setup the controller's application key (register 2060) and subtype (register 2061) are read. If they contradict a P330.7 selection, setup is refused with *The controller runs a different application than the one selected*. The application cannot be changed on an existing entry: entities are tied to the register map they were created with, so add a new entry instead.
 
@@ -40,9 +40,57 @@ During setup the controller's application key (register 2060) and subtype (regis
 * **Energy meters:** `Meter 1` and `Meter 2` (M-Bus, configured at parameters 6000 and 6050; meters 3-5 are not used) appear on their own `Meters` device. `Energy` (kWh, total increasing, so it works in the Energy dashboard), `Power` (kW), `Flow` (l/h), `Volume` (m³) and the supply and return temperatures are read per meter. Checked on a P330.7: all six values of both meters match the "Gerätezähler" page of the Leanheat Monitor, and the energy of both meters is identical to what an existing Modbus YAML configuration reads. The monitor shows further meter data (tariff energies, operating hours, the meter's serial number) that this profile does not read.
 * **Serial number:** Danfoss's communication description lists "Serial high part" as parameter 36 and "Serial low part" as parameter 37, i.e. registers 35 and 36. On the test controller they read 4 and 61646, i.e. 323790, which is the number the controller's interface shows. The P330.7 profile reads both; the A247.1 profile still reads register 36 only and therefore shows 61646 on such a controller.
 * **Source:** most register meanings above were checked against Danfoss's *ECL Comfort 210 / 296 / 310, communication description* (section 9.5, parameter list), in addition to the P330 operating guide and the test controller: valve outputs (triacs 1-6 are parameters 4000-4005, i.e. registers 3999-4004: M1 3999/4000, M2 4001/4002, M3 4003/4004), pumps (relays 1-6 from parameter 4006), the per-output override registers (4059-4064 for triacs, 4065-4070 for relays), application info (2060-2063), the M-Bus meter layout (meter 1 at 6000, meter 2 at 6050) and the sensor registers.
-* Only the room setpoints (comfort and setback, 5...40 °C as in the controller's own interface) are writable. Everything else on P330.7 is read-only until writing it has been verified.
+* The room setpoints (comfort and setback, 5...40 °C as in the controller's own interface) and the **operating mode** of each heating circuit are writable. The mode is a `select` entity (`Mode: Operating Mode (Select)`) with the options *Schedule*, *Comfort*, *Setback* and *Frost protection* (codes 1...4 of the Danfoss communication description, section 6.4); it writes the holding register at the address the mode sensor reads (4200 for circuit 1, 4201 for circuit 2). *Manual operation* is not offered because the controller applies it to every circuit at once. Everything else on P330.7 is read-only until writing it has been verified.
 * The heat curve registers (11399-11404) hold the raw curve points. The controller's interface draws them clipped to the maximum flow temperature, so `-30°C` reads 90 while the interface shows 70. The heat curve slope (register 11174 / 12174, in tenths) is read as well; both match the interface (1.1 and 1.2). Circuit 2's curve starts at register 12399; its six points (85, 67, 55, 49, 43, 31) match the interface (parameters 12400-12405).
 * Other P330 subtypes are not covered. Adding one means adding a profile in `applications.py`.
+
+## 🚀 Version 1.3.2
+
+1.3.2 adds a ready-made dashboard for the **P330.7** application. The integration itself is unchanged. The full
+list is in [CHANGELOG.md](CHANGELOG.md).
+
+**Added**
+
+* **Dashboard for P330.7** in [`dashboards/p330-7/`](dashboards/p330-7/README.md): two views, **ECL 310**
+  (master circuit, both heating circuits with history, meters; with the expert switch also heating
+  curves as graphs, parameters and system information) and **Hydraulik** (live hydraulic diagram). It needs
+  the Plotly Graph Card (HACS) and the helpers in `ecl310-p330-7-helpers.yaml`. The entity ids assume the
+  device name `ECL 1`.
+
+## 🚀 Version 1.3.1
+
+1.3.1 gives the measured temperatures of the P330.7 profile long-term statistics. The full list is in
+[CHANGELOG.md](CHANGELOG.md).
+
+**Fixed**
+
+* **P330.7 temperatures had no long-term statistics.** The measured temperatures (outdoor, flow, return,
+  room sensors, flow targets and the meters' supply and return temperatures) now carry
+  `state_class: measurement`, so Home Assistant keeps their mean, minimum and maximum over time. The
+  statistics start when the update is installed. The read-back settings (limits, set values, curves) are
+  not measurements and stay without. `A247.1` is unchanged.
+
+## 🚀 Version 1.3.0
+
+1.3.0 adds a second application, **P330.7**, and a selector for the application in the setup form.
+Existing installs keep working unchanged: an entry without an application is A247.1. The full list is in
+[CHANGELOG.md](CHANGELOG.md).
+
+**Added**
+
+* **Selectable application** (A247.1 or P330.7); the setup checks the application key and subtype the
+  controller reports and refuses a mismatch.
+* **P330.7 profile:** a master circuit with two heating circuits, grouped on `Master Circuit`,
+  `Heating Circuit 1`, `Heating Circuit 2` and `Meters` devices, with the M-Bus energy meters, valve
+  movement sensors and writable comfort and setback room setpoints.
+* **Writable operating mode on P330.7:** a `select` entity per heating circuit with *Schedule*,
+  *Comfort*, *Setback* and *Frost protection*. Manual operation is not offered because the controller
+  applies it to every circuit at once.
+* 32-bit register values and per-entity devices, which the P330.7 profile needs.
+
+**Fixed**
+
+* **The integration icon showed a clipped "D"** - it is now the complete letter.
 
 ## 🚀 Version 1.2.4
 
@@ -255,6 +303,8 @@ Two files are involved:
 | --- | --- |
 | `dashboards/ecl310-helpers.yaml` | The **one** helper the dashboard needs: `input_boolean.expert_mode`, the switch between the two views. No integration can create an `input_boolean`, and Lovelace cannot switch a view on something it cannot see. Install it as a package. |
 | `dashboards/ecl310-dashboard.yaml` | The dashboard itself. |
+
+For **application P330.7** there is a separate dashboard with heating-curve graphs and a live hydraulic diagram: [`dashboards/p330-7/`](dashboards/p330-7/README.md).
 
 **[→ Dashboard install guide](dashboards/README.md)** (3 steps: match the entity ids, install `dashboards/ecl310-helpers.yaml` as a package, paste `dashboards/ecl310-dashboard.yaml` into a dashboard).
 

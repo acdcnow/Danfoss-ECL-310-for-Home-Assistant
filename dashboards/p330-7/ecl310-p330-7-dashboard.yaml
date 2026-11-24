@@ -1,0 +1,1620 @@
+# =============================================================================
+#  Danfoss ECL 310 - application P330.7 dashboard (sections view, HA 2026.11)
+# -----------------------------------------------------------------------------
+#  Needs : the danfoss_ecl310 integration with application "P330.7"
+#          (master circuit + heating circuit 1 + heating circuit 2, M-Bus meters)
+#          Plotly Graph Card (HACS: dbuezas/lovelace-plotly-graph-card) for the
+#          heating curves
+#          Plotly Graph Card also draws the history graphs (6-minute moving average)
+#          dashboards/p330-7/ecl310-p330-7-helpers.yaml (expert switch + two
+#          template sensors used by the Hydraulik view)
+#  Expert switch: input_boolean.expert_mode (badge in the first section)
+#          off = circuits, meters / on = + heating curves, parameters, system
+#  Entity ids assume the device name "ECL 1" (sensor.ecl_1_...). If yours is
+#  named differently, replace every "ecl_1" with your own slug.
+#  Install: dashboard -> edit -> raw configuration editor -> paste -> save.
+# =============================================================================
+title: "ECL 310"
+views:
+  - type: "sections"
+    path: "ecl310"
+    title: "ECL 310"
+    icon: "mdi:heating-coil"
+    max_columns: 4
+    sections:
+      - type: "grid"
+        cards:
+          - type: "heading"
+            heading_style: "title"
+            heading: "Führungsregelkreis"
+            icon: "mdi:transmission-tower"
+            badges:
+              - type: "entity"
+                entity: "input_boolean.expert_mode"
+                show_state: true
+                show_name: true
+                icon: "mdi:account-hard-hat"
+                name: "Expertenansicht"
+                tap_action:
+                  action: "toggle"
+          - type: "tile"
+            entity: "sensor.ecl_1_sensors_temp_outdoor_s1"
+            name: "Außentemperatur"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_master_circuit_temp_flow_s3"
+            name: "Vorlauf"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_master_circuit_temp_return_s5"
+            name: "Rücklauf"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_master_circuit_mode_pump_p1"
+            name: "Pumpe P1"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_master_circuit_m1_movement"
+            name: "Ventil M1"
+            vertical: false
+          - type: "custom:plotly-graph"
+            hours_to_show: 24
+            refresh_interval: 60
+            config:
+              displayModeBar: false
+              displaylogo: false
+              scrollZoom: false
+              doubleClick: "reset"
+            layout:
+              height: 270
+              margin:
+                l: 44
+                r: 12
+                t: 10
+                b: 72
+              showlegend: true
+              legend:
+                orientation: "h"
+                x: 0
+                y: -0.38
+              paper_bgcolor: "rgba(0,0,0,0)"
+              plot_bgcolor: "rgba(0,0,0,0)"
+              yaxis:
+                ticksuffix: "°"
+                gridcolor: "rgba(127,127,127,0.18)"
+              xaxis:
+                gridcolor: "rgba(127,127,127,0.18)"
+              dragmode: "zoom"
+            entities:
+              - entity: "sensor.ecl_1_master_circuit_temp_flow_s3"
+                name: "Vorlauf (roh)"
+                showlegend: false
+                line:
+                  width: 1
+                  color: "rgba(229,57,53,0.35)"
+              - entity: "sensor.ecl_1_master_circuit_temp_flow_s3"
+                name: "Vorlauf (Ø 6 min)"
+                line:
+                  width: 3
+                  color: "rgb(229,57,53)"
+                  shape: "spline"
+                  smoothing: 0.6
+                filters:
+                  - resample: "1m"
+                  - sliding_window_moving_average:
+                      window_size: 6
+                      extended: true
+                      centered: true
+              - entity: "sensor.ecl_1_master_circuit_temp_return_s5"
+                name: "Rücklauf (roh)"
+                showlegend: false
+                line:
+                  width: 1
+                  color: "rgba(30,136,229,0.35)"
+              - entity: "sensor.ecl_1_master_circuit_temp_return_s5"
+                name: "Rücklauf (Ø 6 min)"
+                line:
+                  width: 3
+                  color: "rgb(30,136,229)"
+                  shape: "spline"
+                  smoothing: 0.6
+                filters:
+                  - resample: "1m"
+                  - sliding_window_moving_average:
+                      window_size: 6
+                      extended: true
+                      centered: true
+            grid_options:
+              columns: "full"
+            visibility:
+              - condition: "screen"
+                media_query: "(pointer: fine)"
+          - type: "custom:plotly-graph"
+            hours_to_show: 24
+            refresh_interval: 60
+            config:
+              displayModeBar: false
+              displaylogo: false
+              scrollZoom: false
+              doubleClick: "reset"
+            layout:
+              height: 270
+              margin:
+                l: 44
+                r: 12
+                t: 10
+                b: 72
+              showlegend: true
+              legend:
+                orientation: "h"
+                x: 0
+                y: -0.38
+              paper_bgcolor: "rgba(0,0,0,0)"
+              plot_bgcolor: "rgba(0,0,0,0)"
+              yaxis:
+                ticksuffix: "°"
+                gridcolor: "rgba(127,127,127,0.18)"
+                fixedrange: true
+              xaxis:
+                gridcolor: "rgba(127,127,127,0.18)"
+                fixedrange: true
+              dragmode: false
+            entities:
+              - entity: "sensor.ecl_1_master_circuit_temp_flow_s3"
+                name: "Vorlauf (roh)"
+                showlegend: false
+                line:
+                  width: 1
+                  color: "rgba(229,57,53,0.35)"
+              - entity: "sensor.ecl_1_master_circuit_temp_flow_s3"
+                name: "Vorlauf (Ø 6 min)"
+                line:
+                  width: 3
+                  color: "rgb(229,57,53)"
+                  shape: "spline"
+                  smoothing: 0.6
+                filters:
+                  - resample: "1m"
+                  - sliding_window_moving_average:
+                      window_size: 6
+                      extended: true
+                      centered: true
+              - entity: "sensor.ecl_1_master_circuit_temp_return_s5"
+                name: "Rücklauf (roh)"
+                showlegend: false
+                line:
+                  width: 1
+                  color: "rgba(30,136,229,0.35)"
+              - entity: "sensor.ecl_1_master_circuit_temp_return_s5"
+                name: "Rücklauf (Ø 6 min)"
+                line:
+                  width: 3
+                  color: "rgb(30,136,229)"
+                  shape: "spline"
+                  smoothing: 0.6
+                filters:
+                  - resample: "1m"
+                  - sliding_window_moving_average:
+                      window_size: 6
+                      extended: true
+                      centered: true
+            grid_options:
+              columns: "full"
+            visibility:
+              - condition: "screen"
+                media_query: "(pointer: coarse)"
+      - type: "grid"
+        cards:
+          - type: "heading"
+            heading_style: "title"
+            heading: "Heizkreis 1 · Erdgeschoss"
+            icon: "mdi:home-floor-0"
+          - type: "tile"
+            entity: "sensor.ecl_1_heating_circuit_1_temp_flow_s4"
+            name: "Vorlauf"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_heating_circuit_1_temp_flow_target"
+            name: "Vorlauf Soll"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_heating_circuit_1_mode_operating_mode"
+            name: "Betriebsart"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_heating_circuit_1_mode_pump_p2"
+            name: "Pumpe P2"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_heating_circuit_1_m2_movement"
+            name: "Ventil M2"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_heating_circuit_1_set_comfort_read"
+            name: "Komfort"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_heating_circuit_1_set_setback_read"
+            name: "Absenkung"
+            vertical: false
+          - type: "custom:plotly-graph"
+            hours_to_show: 24
+            refresh_interval: 60
+            config:
+              displayModeBar: false
+              displaylogo: false
+              scrollZoom: false
+              doubleClick: "reset"
+            layout:
+              height: 270
+              margin:
+                l: 44
+                r: 12
+                t: 10
+                b: 72
+              showlegend: true
+              legend:
+                orientation: "h"
+                x: 0
+                y: -0.38
+              paper_bgcolor: "rgba(0,0,0,0)"
+              plot_bgcolor: "rgba(0,0,0,0)"
+              yaxis:
+                ticksuffix: "°"
+                gridcolor: "rgba(127,127,127,0.18)"
+              xaxis:
+                gridcolor: "rgba(127,127,127,0.18)"
+              dragmode: "zoom"
+            entities:
+              - entity: "sensor.ecl_1_heating_circuit_1_temp_flow_s4"
+                name: "Vorlauf (roh)"
+                showlegend: false
+                line:
+                  width: 1
+                  color: "rgba(231,76,60,0.35)"
+              - entity: "sensor.ecl_1_heating_circuit_1_temp_flow_s4"
+                name: "Vorlauf (Ø 6 min)"
+                line:
+                  width: 3
+                  color: "rgb(231,76,60)"
+                  shape: "spline"
+                  smoothing: 0.6
+                filters:
+                  - resample: "1m"
+                  - sliding_window_moving_average:
+                      window_size: 6
+                      extended: true
+                      centered: true
+              - entity: "sensor.ecl_1_heating_circuit_1_temp_flow_target"
+                name: "Soll"
+                line:
+                  width: 2
+                  color: "rgb(127,140,141)"
+                  dash: "dot"
+            grid_options:
+              columns: "full"
+            visibility:
+              - condition: "screen"
+                media_query: "(pointer: fine)"
+          - type: "custom:plotly-graph"
+            hours_to_show: 24
+            refresh_interval: 60
+            config:
+              displayModeBar: false
+              displaylogo: false
+              scrollZoom: false
+              doubleClick: "reset"
+            layout:
+              height: 270
+              margin:
+                l: 44
+                r: 12
+                t: 10
+                b: 72
+              showlegend: true
+              legend:
+                orientation: "h"
+                x: 0
+                y: -0.38
+              paper_bgcolor: "rgba(0,0,0,0)"
+              plot_bgcolor: "rgba(0,0,0,0)"
+              yaxis:
+                ticksuffix: "°"
+                gridcolor: "rgba(127,127,127,0.18)"
+                fixedrange: true
+              xaxis:
+                gridcolor: "rgba(127,127,127,0.18)"
+                fixedrange: true
+              dragmode: false
+            entities:
+              - entity: "sensor.ecl_1_heating_circuit_1_temp_flow_s4"
+                name: "Vorlauf (roh)"
+                showlegend: false
+                line:
+                  width: 1
+                  color: "rgba(231,76,60,0.35)"
+              - entity: "sensor.ecl_1_heating_circuit_1_temp_flow_s4"
+                name: "Vorlauf (Ø 6 min)"
+                line:
+                  width: 3
+                  color: "rgb(231,76,60)"
+                  shape: "spline"
+                  smoothing: 0.6
+                filters:
+                  - resample: "1m"
+                  - sliding_window_moving_average:
+                      window_size: 6
+                      extended: true
+                      centered: true
+              - entity: "sensor.ecl_1_heating_circuit_1_temp_flow_target"
+                name: "Soll"
+                line:
+                  width: 2
+                  color: "rgb(127,140,141)"
+                  dash: "dot"
+            grid_options:
+              columns: "full"
+            visibility:
+              - condition: "screen"
+                media_query: "(pointer: coarse)"
+      - type: "grid"
+        cards:
+          - type: "heading"
+            heading_style: "title"
+            heading: "Heizkreis 2 · 1. Stock"
+            icon: "mdi:home-floor-1"
+          - type: "tile"
+            entity: "sensor.ecl_1_heating_circuit_2_temp_flow_s9"
+            name: "Vorlauf"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_heating_circuit_2_temp_flow_target"
+            name: "Vorlauf Soll"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_heating_circuit_2_mode_operating_mode"
+            name: "Betriebsart"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_heating_circuit_2_mode_pump_p3"
+            name: "Pumpe P3"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_heating_circuit_2_m3_movement"
+            name: "Ventil M3"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_heating_circuit_2_set_comfort_read"
+            name: "Komfort"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_heating_circuit_2_set_setback_read"
+            name: "Absenkung"
+            vertical: false
+          - type: "custom:plotly-graph"
+            hours_to_show: 24
+            refresh_interval: 60
+            config:
+              displayModeBar: false
+              displaylogo: false
+              scrollZoom: false
+              doubleClick: "reset"
+            layout:
+              height: 270
+              margin:
+                l: 44
+                r: 12
+                t: 10
+                b: 72
+              showlegend: true
+              legend:
+                orientation: "h"
+                x: 0
+                y: -0.38
+              paper_bgcolor: "rgba(0,0,0,0)"
+              plot_bgcolor: "rgba(0,0,0,0)"
+              yaxis:
+                ticksuffix: "°"
+                gridcolor: "rgba(127,127,127,0.18)"
+              xaxis:
+                gridcolor: "rgba(127,127,127,0.18)"
+              dragmode: "zoom"
+            entities:
+              - entity: "sensor.ecl_1_heating_circuit_2_temp_flow_s9"
+                name: "Vorlauf (roh)"
+                showlegend: false
+                line:
+                  width: 1
+                  color: "rgba(22,160,133,0.35)"
+              - entity: "sensor.ecl_1_heating_circuit_2_temp_flow_s9"
+                name: "Vorlauf (Ø 6 min)"
+                line:
+                  width: 3
+                  color: "rgb(22,160,133)"
+                  shape: "spline"
+                  smoothing: 0.6
+                filters:
+                  - resample: "1m"
+                  - sliding_window_moving_average:
+                      window_size: 6
+                      extended: true
+                      centered: true
+              - entity: "sensor.ecl_1_heating_circuit_2_temp_flow_target"
+                name: "Soll"
+                line:
+                  width: 2
+                  color: "rgb(127,140,141)"
+                  dash: "dot"
+            grid_options:
+              columns: "full"
+            visibility:
+              - condition: "screen"
+                media_query: "(pointer: fine)"
+          - type: "custom:plotly-graph"
+            hours_to_show: 24
+            refresh_interval: 60
+            config:
+              displayModeBar: false
+              displaylogo: false
+              scrollZoom: false
+              doubleClick: "reset"
+            layout:
+              height: 270
+              margin:
+                l: 44
+                r: 12
+                t: 10
+                b: 72
+              showlegend: true
+              legend:
+                orientation: "h"
+                x: 0
+                y: -0.38
+              paper_bgcolor: "rgba(0,0,0,0)"
+              plot_bgcolor: "rgba(0,0,0,0)"
+              yaxis:
+                ticksuffix: "°"
+                gridcolor: "rgba(127,127,127,0.18)"
+                fixedrange: true
+              xaxis:
+                gridcolor: "rgba(127,127,127,0.18)"
+                fixedrange: true
+              dragmode: false
+            entities:
+              - entity: "sensor.ecl_1_heating_circuit_2_temp_flow_s9"
+                name: "Vorlauf (roh)"
+                showlegend: false
+                line:
+                  width: 1
+                  color: "rgba(22,160,133,0.35)"
+              - entity: "sensor.ecl_1_heating_circuit_2_temp_flow_s9"
+                name: "Vorlauf (Ø 6 min)"
+                line:
+                  width: 3
+                  color: "rgb(22,160,133)"
+                  shape: "spline"
+                  smoothing: 0.6
+                filters:
+                  - resample: "1m"
+                  - sliding_window_moving_average:
+                      window_size: 6
+                      extended: true
+                      centered: true
+              - entity: "sensor.ecl_1_heating_circuit_2_temp_flow_target"
+                name: "Soll"
+                line:
+                  width: 2
+                  color: "rgb(127,140,141)"
+                  dash: "dot"
+            grid_options:
+              columns: "full"
+            visibility:
+              - condition: "screen"
+                media_query: "(pointer: coarse)"
+      - type: "grid"
+        cards:
+          - type: "heading"
+            heading_style: "title"
+            heading: "Wärmezähler (M-Bus)"
+            icon: "mdi:counter"
+          - type: "heading"
+            heading_style: "subtitle"
+            heading: "Hauptzähler"
+          - type: "tile"
+            entity: "sensor.ecl_1_meters_meter_1_energy"
+            name: "Energie"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_meters_meter_1_power"
+            name: "Leistung"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_meters_meter_1_flow"
+            name: "Durchfluss"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_meters_meter_1_supply_temperature"
+            name: "Vorlauf"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_meters_meter_1_return_temperature"
+            name: "Rücklauf"
+            vertical: false
+          - type: "heading"
+            heading_style: "subtitle"
+            heading: "1. Stock"
+          - type: "tile"
+            entity: "sensor.ecl_1_meters_meter_2_energy"
+            name: "Energie"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_meters_meter_2_power"
+            name: "Leistung"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_meters_meter_2_flow"
+            name: "Durchfluss"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_meters_meter_2_supply_temperature"
+            name: "Vorlauf"
+            vertical: false
+          - type: "tile"
+            entity: "sensor.ecl_1_meters_meter_2_return_temperature"
+            name: "Rücklauf"
+            vertical: false
+      - type: "grid"
+        column_span: 2
+        visibility:
+          - condition: "state"
+            entity: "input_boolean.expert_mode"
+            state: "on"
+        cards:
+          - type: "heading"
+            heading_style: "title"
+            heading: "Heizkurven (Grafik)"
+            icon: "mdi:chart-bell-curve"
+          - type: "custom:plotly-graph"
+            title: "Heizkreis 1 · Erdgeschoss"
+            refresh_interval: 30
+            hours_to_show: "current_day"
+            config:
+              displayModeBar: false
+              displaylogo: false
+              scrollZoom: false
+            layout:
+              height: 410
+              margin:
+                l: 54
+                r: 16
+                t: 10
+                b: 110
+              showlegend: true
+              legend:
+                orientation: "h"
+                x: 0
+                y: -0.42
+              paper_bgcolor: "rgba(0,0,0,0)"
+              plot_bgcolor: "rgba(0,0,0,0)"
+              xaxis:
+                type: "linear"
+                title:
+                  text: "Außentemperatur in °C"
+                  standoff: 6
+                range:
+                  - -34
+                  - 18
+                fixedrange: true
+                zeroline: false
+                dtick: 5
+                tick0: -30
+                ticksuffix: "°"
+                tickangle: 0
+                tickfont:
+                  size: 10
+                gridcolor: "rgba(127,127,127,0.18)"
+              yaxis:
+                title:
+                  text: "Vorlauf in °C"
+                range:
+                  - 20
+                  - 95
+                fixedrange: true
+                zeroline: false
+                gridcolor: "rgba(127,127,127,0.18)"
+            entities:
+              - entity: ""
+                name: "Heizkurve (begrenzt)"
+                mode: "lines+markers+text"
+                text:
+                  - "-30°"
+                  - "-15°"
+                  - "-5°"
+                  - "0°"
+                  - "+5°"
+                  - "+15°"
+                textposition: "top center"
+                textfont:
+                  size: 10
+                  color: "#e74c3c"
+                line:
+                  shape: "linear"
+                  color: "#e74c3c"
+                  width: 3
+                marker:
+                  size: 7
+                  color: "#e74c3c"
+                x:
+                  - "-30"
+                  - "-15"
+                  - "-5"
+                  - "0"
+                  - "5"
+                  - "15"
+                y:
+                  - "$fn ({ hass }) => Math.max(parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_limit_flow_min'].state), Math.min(parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_curve_minus_30degc'].state), parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_limit_flow_max'].state)))"
+                  - "$fn ({ hass }) => Math.max(parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_limit_flow_min'].state), Math.min(parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_curve_minus_15degc'].state), parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_limit_flow_max'].state)))"
+                  - "$fn ({ hass }) => Math.max(parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_limit_flow_min'].state), Math.min(parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_curve_minus_5degc'].state), parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_limit_flow_max'].state)))"
+                  - "$fn ({ hass }) => Math.max(parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_limit_flow_min'].state), Math.min(parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_curve_0degc'].state), parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_limit_flow_max'].state)))"
+                  - "$fn ({ hass }) => Math.max(parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_limit_flow_min'].state), Math.min(parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_curve_plus_5degc'].state), parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_limit_flow_max'].state)))"
+                  - "$fn ({ hass }) => Math.max(parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_limit_flow_min'].state), Math.min(parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_curve_plus_15degc'].state), parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_limit_flow_max'].state)))"
+              - entity: ""
+                name: "Höchstwert"
+                mode: "lines"
+                line:
+                  color: "rgba(127,127,127,0.6)"
+                  width: 1
+                  dash: "dash"
+                x:
+                  - "-34"
+                  - "18"
+                y:
+                  - "$fn ({ hass }) => parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_limit_flow_max'].state)"
+                  - "$fn ({ hass }) => parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_limit_flow_max'].state)"
+              - entity: ""
+                name: "Vorlauf Soll"
+                mode: "markers"
+                marker:
+                  size: 12
+                  color: "#3498db"
+                  symbol: "diamond"
+                  line:
+                    width: 1
+                    color: "#ffffff"
+                x:
+                  - "$fn ({ hass }) => parseFloat(hass.states['sensor.ecl_1_sensors_temp_outdoor_s1'].state)"
+                y:
+                  - "$fn ({ hass }) => parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_temp_flow_target'].state)"
+              - entity: ""
+                name: "Vorlauf Ist"
+                mode: "markers"
+                marker:
+                  size: 11
+                  color: "#e67e22"
+                  symbol: "circle-open"
+                  line:
+                    width: 3
+                    color: "#e67e22"
+                x:
+                  - "$fn ({ hass }) => parseFloat(hass.states['sensor.ecl_1_sensors_temp_outdoor_s1'].state)"
+                y:
+                  - "$fn ({ hass }) => parseFloat(hass.states['sensor.ecl_1_heating_circuit_1_temp_flow_s4'].state)"
+          - type: "custom:plotly-graph"
+            title: "Heizkreis 2 · 1. Stock"
+            refresh_interval: 30
+            hours_to_show: "current_day"
+            config:
+              displayModeBar: false
+              displaylogo: false
+              scrollZoom: false
+            layout:
+              height: 410
+              margin:
+                l: 54
+                r: 16
+                t: 10
+                b: 110
+              showlegend: true
+              legend:
+                orientation: "h"
+                x: 0
+                y: -0.42
+              paper_bgcolor: "rgba(0,0,0,0)"
+              plot_bgcolor: "rgba(0,0,0,0)"
+              xaxis:
+                type: "linear"
+                title:
+                  text: "Außentemperatur in °C"
+                  standoff: 6
+                range:
+                  - -34
+                  - 18
+                fixedrange: true
+                zeroline: false
+                dtick: 5
+                tick0: -30
+                ticksuffix: "°"
+                tickangle: 0
+                tickfont:
+                  size: 10
+                gridcolor: "rgba(127,127,127,0.18)"
+              yaxis:
+                title:
+                  text: "Vorlauf in °C"
+                range:
+                  - 20
+                  - 95
+                fixedrange: true
+                zeroline: false
+                gridcolor: "rgba(127,127,127,0.18)"
+            entities:
+              - entity: ""
+                name: "Heizkurve (begrenzt)"
+                mode: "lines+markers+text"
+                text:
+                  - "-30°"
+                  - "-15°"
+                  - "-5°"
+                  - "0°"
+                  - "+5°"
+                  - "+15°"
+                textposition: "top center"
+                textfont:
+                  size: 10
+                  color: "#16a085"
+                line:
+                  shape: "linear"
+                  color: "#16a085"
+                  width: 3
+                marker:
+                  size: 7
+                  color: "#16a085"
+                x:
+                  - "-30"
+                  - "-15"
+                  - "-5"
+                  - "0"
+                  - "5"
+                  - "15"
+                y:
+                  - "$fn ({ hass }) => Math.max(parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_limit_flow_min'].state), Math.min(parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_curve_minus_30degc'].state), parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_limit_flow_max'].state)))"
+                  - "$fn ({ hass }) => Math.max(parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_limit_flow_min'].state), Math.min(parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_curve_minus_15degc'].state), parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_limit_flow_max'].state)))"
+                  - "$fn ({ hass }) => Math.max(parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_limit_flow_min'].state), Math.min(parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_curve_minus_5degc'].state), parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_limit_flow_max'].state)))"
+                  - "$fn ({ hass }) => Math.max(parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_limit_flow_min'].state), Math.min(parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_curve_0degc'].state), parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_limit_flow_max'].state)))"
+                  - "$fn ({ hass }) => Math.max(parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_limit_flow_min'].state), Math.min(parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_curve_plus_5degc'].state), parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_limit_flow_max'].state)))"
+                  - "$fn ({ hass }) => Math.max(parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_limit_flow_min'].state), Math.min(parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_curve_plus_15degc'].state), parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_limit_flow_max'].state)))"
+              - entity: ""
+                name: "Höchstwert"
+                mode: "lines"
+                line:
+                  color: "rgba(127,127,127,0.6)"
+                  width: 1
+                  dash: "dash"
+                x:
+                  - "-34"
+                  - "18"
+                y:
+                  - "$fn ({ hass }) => parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_limit_flow_max'].state)"
+                  - "$fn ({ hass }) => parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_limit_flow_max'].state)"
+              - entity: ""
+                name: "Vorlauf Soll"
+                mode: "markers"
+                marker:
+                  size: 12
+                  color: "#3498db"
+                  symbol: "diamond"
+                  line:
+                    width: 1
+                    color: "#ffffff"
+                x:
+                  - "$fn ({ hass }) => parseFloat(hass.states['sensor.ecl_1_sensors_temp_outdoor_s1'].state)"
+                y:
+                  - "$fn ({ hass }) => parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_temp_flow_target'].state)"
+              - entity: ""
+                name: "Vorlauf Ist"
+                mode: "markers"
+                marker:
+                  size: 11
+                  color: "#e67e22"
+                  symbol: "circle-open"
+                  line:
+                    width: 3
+                    color: "#e67e22"
+                x:
+                  - "$fn ({ hass }) => parseFloat(hass.states['sensor.ecl_1_sensors_temp_outdoor_s1'].state)"
+                y:
+                  - "$fn ({ hass }) => parseFloat(hass.states['sensor.ecl_1_heating_circuit_2_temp_flow_s9'].state)"
+          - type: "markdown"
+            content: "{% set c = 'sensor.ecl_1_heating_circuit_1' %}{% set xs = [-30, -15, -5, 0, 5, 15] %}{% set ks = ['minus_30degc', 'minus_15degc', 'minus_5degc', '0degc', 'plus_5degc', 'plus_15degc'] %}{% set t = states('sensor.ecl_1_sensors_temp_outdoor_s1') | float(none) %}{% set vmin = states(c ~ '_limit_flow_min') | float(none) %}{% set vmax = states(c ~ '_limit_flow_max') | float(none) %}{% set ns = namespace(v=none) %}{% if t is not none %}{% for i in range(5) %}{% set a = states(c ~ '_curve_' ~ ks[i]) | float(none) %}{% set b = states(c ~ '_curve_' ~ ks[i+1]) | float(none) %}{% if a is not none and b is not none and (xs[i] <= t <= xs[i+1]) %}{% set ns.v = a + (b - a) * (t - xs[i]) / (xs[i+1] - xs[i]) %}{% endif %}{% endfor %}{% if ns.v is none %}{% set ns.v = states(c ~ '_curve_' ~ (ks[0] if t < -30 else ks[5])) | float(none) %}{% endif %}{% endif %}**Heizkreis 1 · Steigung {{ states(c ~ '_curve_slope') }}**{% if ns.v is not none %}\n\nAußen {{ t | round(1) }} °C → Kurve {{ [[ns.v, vmin] | max, vmax] | min | round(1) }} °C{% if vmax is not none and ns.v > vmax %} (begrenzt auf {{ vmax | round(0) | int }} °C){% endif %}{% endif %}\n\nRegler-Soll {{ states(c ~ '_temp_flow_target') | float(0) | round(1) }} °C · Ist {{ states(c ~ '_temp_flow_s4') | float(0) | round(1) }} °C"
+          - type: "markdown"
+            content: "{% set c = 'sensor.ecl_1_heating_circuit_2' %}{% set xs = [-30, -15, -5, 0, 5, 15] %}{% set ks = ['minus_30degc', 'minus_15degc', 'minus_5degc', '0degc', 'plus_5degc', 'plus_15degc'] %}{% set t = states('sensor.ecl_1_sensors_temp_outdoor_s1') | float(none) %}{% set vmin = states(c ~ '_limit_flow_min') | float(none) %}{% set vmax = states(c ~ '_limit_flow_max') | float(none) %}{% set ns = namespace(v=none) %}{% if t is not none %}{% for i in range(5) %}{% set a = states(c ~ '_curve_' ~ ks[i]) | float(none) %}{% set b = states(c ~ '_curve_' ~ ks[i+1]) | float(none) %}{% if a is not none and b is not none and (xs[i] <= t <= xs[i+1]) %}{% set ns.v = a + (b - a) * (t - xs[i]) / (xs[i+1] - xs[i]) %}{% endif %}{% endfor %}{% if ns.v is none %}{% set ns.v = states(c ~ '_curve_' ~ (ks[0] if t < -30 else ks[5])) | float(none) %}{% endif %}{% endif %}**Heizkreis 2 · Steigung {{ states(c ~ '_curve_slope') }}**{% if ns.v is not none %}\n\nAußen {{ t | round(1) }} °C → Kurve {{ [[ns.v, vmin] | max, vmax] | min | round(1) }} °C{% if vmax is not none and ns.v > vmax %} (begrenzt auf {{ vmax | round(0) | int }} °C){% endif %}{% endif %}\n\nRegler-Soll {{ states(c ~ '_temp_flow_target') | float(0) | round(1) }} °C · Ist {{ states(c ~ '_temp_flow_s9') | float(0) | round(1) }} °C"
+      - type: "grid"
+        column_span: 2
+        visibility:
+          - condition: "state"
+            entity: "input_boolean.expert_mode"
+            state: "on"
+        cards:
+          - type: "heading"
+            heading_style: "title"
+            heading: "Parameter"
+            icon: "mdi:cog-outline"
+          - type: "entities"
+            title: "Heizkreis 1 · Erdgeschoss"
+            entities:
+              - entity: "sensor.ecl_1_heating_circuit_1_curve_slope"
+                name: "Steigung"
+              - entity: "sensor.ecl_1_heating_circuit_1_curve_minus_30degc"
+                name: "Kurve −30 °C"
+              - entity: "sensor.ecl_1_heating_circuit_1_curve_minus_15degc"
+                name: "Kurve −15 °C"
+              - entity: "sensor.ecl_1_heating_circuit_1_curve_minus_5degc"
+                name: "Kurve −5 °C"
+              - entity: "sensor.ecl_1_heating_circuit_1_curve_0degc"
+                name: "Kurve 0 °C"
+              - entity: "sensor.ecl_1_heating_circuit_1_curve_plus_5degc"
+                name: "Kurve 5 °C"
+              - entity: "sensor.ecl_1_heating_circuit_1_curve_plus_15degc"
+                name: "Kurve 15 °C"
+              - entity: "sensor.ecl_1_heating_circuit_1_limit_flow_min"
+                name: "Vorlauf min"
+              - entity: "sensor.ecl_1_heating_circuit_1_limit_flow_max"
+                name: "Vorlauf max"
+              - entity: "sensor.ecl_1_heating_circuit_1_limit_frost_protection"
+                name: "Frostschutz"
+              - entity: "sensor.ecl_1_heating_circuit_1_limit_summer_cutout"
+                name: "Sommerabschaltung"
+              - entity: "sensor.ecl_1_heating_circuit_1_limit_room_influence_min"
+                name: "Raumeinfluss min"
+              - entity: "sensor.ecl_1_heating_circuit_1_limit_room_influence_max"
+                name: "Raumeinfluss max"
+              - entity: "sensor.ecl_1_heating_circuit_1_limit_return_influence_min"
+                name: "Rücklaufbegrenzung min"
+              - entity: "sensor.ecl_1_heating_circuit_1_limit_return_influence_max"
+                name: "Rücklaufbegrenzung max"
+              - entity: "sensor.ecl_1_heating_circuit_1_set_pump_start_temperature_read"
+                name: "Pumpe Starttemperatur"
+              - entity: "sensor.ecl_1_heating_circuit_1_set_pump_frost_protection_read"
+                name: "Pumpe Frostschutz"
+              - entity: "sensor.ecl_1_heating_circuit_1_mode_manual_pump_p2"
+                name: "Handbetrieb Pumpe P2"
+              - entity: "sensor.ecl_1_heating_circuit_1_mode_manual_valve_m2"
+                name: "Handbetrieb Ventil M2"
+          - type: "entities"
+            title: "Heizkreis 2 · 1. Stock"
+            entities:
+              - entity: "sensor.ecl_1_heating_circuit_2_curve_slope"
+                name: "Steigung"
+              - entity: "sensor.ecl_1_heating_circuit_2_curve_minus_30degc"
+                name: "Kurve −30 °C"
+              - entity: "sensor.ecl_1_heating_circuit_2_curve_minus_15degc"
+                name: "Kurve −15 °C"
+              - entity: "sensor.ecl_1_heating_circuit_2_curve_minus_5degc"
+                name: "Kurve −5 °C"
+              - entity: "sensor.ecl_1_heating_circuit_2_curve_0degc"
+                name: "Kurve 0 °C"
+              - entity: "sensor.ecl_1_heating_circuit_2_curve_plus_5degc"
+                name: "Kurve 5 °C"
+              - entity: "sensor.ecl_1_heating_circuit_2_curve_plus_15degc"
+                name: "Kurve 15 °C"
+              - entity: "sensor.ecl_1_heating_circuit_2_limit_flow_min"
+                name: "Vorlauf min"
+              - entity: "sensor.ecl_1_heating_circuit_2_limit_flow_max"
+                name: "Vorlauf max"
+              - entity: "sensor.ecl_1_heating_circuit_2_limit_frost_protection"
+                name: "Frostschutz"
+              - entity: "sensor.ecl_1_heating_circuit_2_limit_summer_cutout"
+                name: "Sommerabschaltung"
+              - entity: "sensor.ecl_1_heating_circuit_2_limit_room_influence_min"
+                name: "Raumeinfluss min"
+              - entity: "sensor.ecl_1_heating_circuit_2_limit_room_influence_max"
+                name: "Raumeinfluss max"
+              - entity: "sensor.ecl_1_heating_circuit_2_limit_return_influence_min"
+                name: "Rücklaufbegrenzung min"
+              - entity: "sensor.ecl_1_heating_circuit_2_limit_return_influence_max"
+                name: "Rücklaufbegrenzung max"
+              - entity: "sensor.ecl_1_heating_circuit_2_set_pump_start_temperature_read"
+                name: "Pumpe Starttemperatur"
+              - entity: "sensor.ecl_1_heating_circuit_2_set_pump_frost_protection_read"
+                name: "Pumpe Frostschutz"
+              - entity: "sensor.ecl_1_heating_circuit_2_mode_manual_pump_p3"
+                name: "Handbetrieb Pumpe P3"
+              - entity: "sensor.ecl_1_heating_circuit_2_mode_manual_valve_m3"
+                name: "Handbetrieb Ventil M3"
+      - type: "grid"
+        visibility:
+          - condition: "state"
+            entity: "input_boolean.expert_mode"
+            state: "on"
+        cards:
+          - type: "heading"
+            heading_style: "title"
+            heading: "ECL 310 System"
+            icon: "mdi:chip"
+          - type: "entities"
+            entities:
+              - entity: "sensor.ecl_1_diagnostics_system_serial_number"
+                name: "Seriennummer"
+              - entity: "sensor.ecl_1_diagnostics_system_firmware"
+                name: "Firmware"
+              - entity: "sensor.ecl_1_diagnostics_system_application_key"
+                name: "Applikation"
+              - entity: "sensor.ecl_1_diagnostics_system_application_subtype"
+                name: "Untertyp"
+              - entity: "sensor.ecl_1_diagnostics_system_application_version"
+                name: "Applikationsversion"
+  - type: "sections"
+    path: "hydraulik"
+    title: "Hydraulik"
+    icon: "mdi:pipe"
+    max_columns: 2
+    sections:
+      - type: "grid"
+        column_span: 2
+        cards:
+          - type: "heading"
+            heading_style: "title"
+            heading: "Hydraulikschema ECL 310"
+            icon: "mdi:pipe"
+          - type: "picture-elements"
+            image: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201000%20500'%3E%3Crect%20x='250'%20y='290'%20width='70'%20height='160'%20rx='8'%20fill='none'%20stroke='%238a8f98'%20stroke-width='3'/%3E%3Cpolyline%20points='262,305%20298,345%20262,385%20298,425'%20fill='none'%20stroke='%23e53935'%20stroke-width='3'%20opacity='0.55'/%3E%3Cpolyline%20points='272,305%20308,345%20272,385%20308,425'%20fill='none'%20stroke='%231e88e5'%20stroke-width='3'%20opacity='0.55'/%3E%3Crect%20x='800'%20y='85'%20width='120'%20height='90'%20rx='8'%20fill='none'%20stroke='%238a8f98'%20stroke-width='3'/%3E%3Crect%20x='800'%20y='273'%20width='120'%20height='90'%20rx='8'%20fill='none'%20stroke='%238a8f98'%20stroke-width='3'/%3E%3Crect%20x='810'%20y='430'%20width='180'%20height='60'%20rx='8'%20fill='none'%20stroke='%238a8f98'%20stroke-width='3'/%3E%3Cpolygon%20points='25,303%2055,318%2025,333'%20fill='%23e53935'/%3E%3Cpolygon%20points='55,403%2025,418%2055,433'%20fill='%231e88e5'/%3E%3Ctext%20x='285'%20y='480'%20text-anchor='middle'%20font-size='16'%20font-family='sans-serif'%20fill='%238a8f98'%3EWärmetauscher%3C/text%3E%3Ctext%20x='860'%20y='115'%20text-anchor='middle'%20font-size='18'%20font-family='sans-serif'%20fill='%238a8f98'%3EHeizkreis%201%3C/text%3E%3Ctext%20x='860'%20y='136'%20text-anchor='middle'%20font-size='16'%20font-family='sans-serif'%20fill='%238a8f98'%3EErdgeschoss%3C/text%3E%3Ctext%20x='860'%20y='303'%20text-anchor='middle'%20font-size='18'%20font-family='sans-serif'%20fill='%238a8f98'%3EHeizkreis%202%3C/text%3E%3Ctext%20x='860'%20y='324'%20text-anchor='middle'%20font-size='16'%20font-family='sans-serif'%20fill='%238a8f98'%3E1.%20Stock%3C/text%3E%3Ctext%20x='900'%20y='450'%20text-anchor='middle'%20font-size='16'%20font-family='sans-serif'%20fill='%238a8f98'%3EZähler%202%3C/text%3E%3Ctext%20x='110'%20y='449'%20text-anchor='middle'%20font-size='20'%20font-family='sans-serif'%20fill='%238a8f98'%3EM1%3C/text%3E%3Ctext%20x='430'%20y='362'%20text-anchor='middle'%20font-size='20'%20font-family='sans-serif'%20fill='%238a8f98'%3EP1%3C/text%3E%3Ctext%20x='600'%20y='95'%20text-anchor='middle'%20font-size='20'%20font-family='sans-serif'%20fill='%238a8f98'%3EP2%3C/text%3E%3Ctext%20x='740'%20y='362'%20text-anchor='middle'%20font-size='20'%20font-family='sans-serif'%20fill='%238a8f98'%3EP3%3C/text%3E%3Ctext%20x='455'%20y='205'%20text-anchor='end'%20font-size='20'%20font-family='sans-serif'%20fill='%238a8f98'%3EM2%3C/text%3E%3Ctext%20x='570'%20y='288'%20text-anchor='middle'%20font-size='20'%20font-family='sans-serif'%20fill='%238a8f98'%3EM3%3C/text%3E%3Ctext%20x='105'%20y='337'%20text-anchor='middle'%20font-size='16'%20font-family='sans-serif'%20fill='%238a8f98'%3EZähler%201%3C/text%3E%3Ccircle%20cx='430'%20cy='318'%20r='19'%20fill='none'%20stroke='%238a8f98'%20stroke-width='3'/%3E%3Ccircle%20cx='600'%20cy='130'%20r='19'%20fill='none'%20stroke='%238a8f98'%20stroke-width='3'/%3E%3Ccircle%20cx='740'%20cy='318'%20r='19'%20fill='none'%20stroke='%238a8f98'%20stroke-width='3'/%3E%3Ccircle%20cx='200'%20cy='418'%20r='6'%20fill='%238a8f98'/%3E%3Ccircle%20cx='365'%20cy='318'%20r='6'%20fill='%238a8f98'/%3E%3Ccircle%20cx='700'%20cy='130'%20r='6'%20fill='%238a8f98'/%3E%3Ccircle%20cx='660'%20cy='318'%20r='6'%20fill='%238a8f98'/%3E%3Cpolygon%20points='98,408%20110,418%2098,428'%20fill='%238a8f98'/%3E%3Cpolygon%20points='122,408%20110,418%20122,428'%20fill='%238a8f98'/%3E%3Cpolygon%20points='470,188%20480,200%20490,188'%20fill='%238a8f98'/%3E%3Cpolygon%20points='470,212%20480,200%20490,212'%20fill='%238a8f98'/%3E%3Cpolygon%20points='558,308%20570,318%20558,328'%20fill='%238a8f98'/%3E%3Cpolygon%20points='582,308%20570,318%20582,328'%20fill='%238a8f98'/%3E%3C/svg%3E"
+            elements:
+              - type: "conditional"
+                conditions:
+                  - condition: "numeric_state"
+                    entity: "sensor.ecl_1_meters_meter_1_flow"
+                    above: 0
+                elements:
+                  - type: "image"
+                    image: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201000%20500'%3E%3Cg%20fill='none'%20stroke-width='7'%20stroke-linecap='round'%3E%3Cpath%20stroke='%23e53935'%20d='M55%20318%20H250'/%3E%3Cpath%20stroke='%231e88e5'%20d='M250%20418%20H122'/%3E%3Cpath%20stroke='%231e88e5'%20d='M98%20418%20H55'/%3E%3C/g%3E%3C/svg%3E"
+                    style:
+                      left: "50%"
+                      top: "50%"
+                      width: "100%"
+                    tap_action:
+                      action: "none"
+              - type: "conditional"
+                conditions:
+                  - condition: "numeric_state"
+                    entity: "sensor.ecl_1_meters_meter_1_flow"
+                    below: 0.01
+                elements:
+                  - type: "image"
+                    image: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201000%20500'%3E%3Cg%20fill='none'%20stroke-width='7'%20stroke-linecap='round'%3E%3Cpath%20stroke='%23b4b8bf'%20d='M55%20318%20H250'/%3E%3Cpath%20stroke='%23b4b8bf'%20d='M250%20418%20H122'/%3E%3Cpath%20stroke='%23b4b8bf'%20d='M98%20418%20H55'/%3E%3C/g%3E%3C/svg%3E"
+                    style:
+                      left: "50%"
+                      top: "50%"
+                      width: "100%"
+                    tap_action:
+                      action: "none"
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_master_circuit_mode_pump_p1"
+                    state: "1"
+                elements:
+                  - type: "image"
+                    image: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201000%20500'%3E%3Cg%20fill='none'%20stroke-width='7'%20stroke-linecap='round'%3E%3Cpath%20stroke='%23e53935'%20d='M320%20318%20H411'/%3E%3Cpath%20stroke='%23e53935'%20d='M449%20318%20H480'/%3E%3Cpath%20stroke='%231e88e5'%20d='M500%20418%20H320'/%3E%3C/g%3E%3C/svg%3E"
+                    style:
+                      left: "50%"
+                      top: "50%"
+                      width: "100%"
+                    tap_action:
+                      action: "none"
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_master_circuit_mode_pump_p1"
+                    state_not: "1"
+                elements:
+                  - type: "image"
+                    image: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201000%20500'%3E%3Cg%20fill='none'%20stroke-width='7'%20stroke-linecap='round'%3E%3Cpath%20stroke='%23b4b8bf'%20d='M320%20318%20H411'/%3E%3Cpath%20stroke='%23b4b8bf'%20d='M449%20318%20H480'/%3E%3Cpath%20stroke='%23b4b8bf'%20d='M500%20418%20H320'/%3E%3C/g%3E%3C/svg%3E"
+                    style:
+                      left: "50%"
+                      top: "50%"
+                      width: "100%"
+                    tap_action:
+                      action: "none"
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_heating_circuit_1_mode_pump_p2"
+                    state: "1"
+                elements:
+                  - type: "image"
+                    image: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201000%20500'%3E%3Cg%20fill='none'%20stroke-width='7'%20stroke-linecap='round'%3E%3Cpath%20stroke='%23e53935'%20d='M480%20318%20V212'/%3E%3Cpath%20stroke='%23e53935'%20d='M480%20188%20V130%20H581'/%3E%3Cpath%20stroke='%23e53935'%20d='M619%20130%20H800'/%3E%3Cpath%20stroke='%231e88e5'%20d='M860%20175%20V215%20H500%20V308'/%3E%3Cpath%20stroke='%231e88e5'%20d='M500%20328%20V418'/%3E%3C/g%3E%3C/svg%3E"
+                    style:
+                      left: "50%"
+                      top: "50%"
+                      width: "100%"
+                    tap_action:
+                      action: "none"
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_heating_circuit_1_mode_pump_p2"
+                    state_not: "1"
+                elements:
+                  - type: "image"
+                    image: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201000%20500'%3E%3Cg%20fill='none'%20stroke-width='7'%20stroke-linecap='round'%3E%3Cpath%20stroke='%23b4b8bf'%20d='M480%20318%20V212'/%3E%3Cpath%20stroke='%23b4b8bf'%20d='M480%20188%20V130%20H581'/%3E%3Cpath%20stroke='%23b4b8bf'%20d='M619%20130%20H800'/%3E%3Cpath%20stroke='%23b4b8bf'%20d='M860%20175%20V215%20H500%20V308'/%3E%3Cpath%20stroke='%23b4b8bf'%20d='M500%20328%20V418'/%3E%3C/g%3E%3C/svg%3E"
+                    style:
+                      left: "50%"
+                      top: "50%"
+                      width: "100%"
+                    tap_action:
+                      action: "none"
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_heating_circuit_2_mode_pump_p3"
+                    state: "1"
+                elements:
+                  - type: "image"
+                    image: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201000%20500'%3E%3Cg%20fill='none'%20stroke-width='7'%20stroke-linecap='round'%3E%3Cpath%20stroke='%23e53935'%20d='M480%20318%20H558'/%3E%3Cpath%20stroke='%23e53935'%20d='M582%20318%20H721'/%3E%3Cpath%20stroke='%23e53935'%20d='M759%20318%20H800'/%3E%3Cpath%20stroke='%231e88e5'%20d='M860%20363%20V418%20H500'/%3E%3Cpath%20stroke='%231e88e5'%20d='M570%20418%20V335'/%3E%3C/g%3E%3C/svg%3E"
+                    style:
+                      left: "50%"
+                      top: "50%"
+                      width: "100%"
+                    tap_action:
+                      action: "none"
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_heating_circuit_2_mode_pump_p3"
+                    state_not: "1"
+                elements:
+                  - type: "image"
+                    image: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201000%20500'%3E%3Cg%20fill='none'%20stroke-width='7'%20stroke-linecap='round'%3E%3Cpath%20stroke='%23b4b8bf'%20d='M480%20318%20H558'/%3E%3Cpath%20stroke='%23b4b8bf'%20d='M582%20318%20H721'/%3E%3Cpath%20stroke='%23b4b8bf'%20d='M759%20318%20H800'/%3E%3Cpath%20stroke='%23b4b8bf'%20d='M860%20363%20V418%20H500'/%3E%3Cpath%20stroke='%23b4b8bf'%20d='M570%20418%20V335'/%3E%3C/g%3E%3C/svg%3E"
+                    style:
+                      left: "50%"
+                      top: "50%"
+                      width: "100%"
+                    tap_action:
+                      action: "none"
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_master_circuit_m1_movement"
+                    state: "opening"
+                elements:
+                  - type: "image"
+                    image: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201000%20500'%3E%3Cpolygon%20points='98,408%20110,418%2098,428'%20fill='%23fb8c00'/%3E%3Cpolygon%20points='122,408%20110,418%20122,428'%20fill='%23fb8c00'/%3E%3C/svg%3E"
+                    style:
+                      left: "50%"
+                      top: "50%"
+                      width: "100%"
+                    tap_action:
+                      action: "none"
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_master_circuit_m1_movement"
+                    state: "closing"
+                elements:
+                  - type: "image"
+                    image: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201000%20500'%3E%3Cpolygon%20points='98,408%20110,418%2098,428'%20fill='%23fb8c00'/%3E%3Cpolygon%20points='122,408%20110,418%20122,428'%20fill='%23fb8c00'/%3E%3C/svg%3E"
+                    style:
+                      left: "50%"
+                      top: "50%"
+                      width: "100%"
+                    tap_action:
+                      action: "none"
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_heating_circuit_1_m2_movement"
+                    state: "opening"
+                elements:
+                  - type: "image"
+                    image: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201000%20500'%3E%3Cpolygon%20points='470,188%20480,200%20490,188'%20fill='%23fb8c00'/%3E%3Cpolygon%20points='470,212%20480,200%20490,212'%20fill='%23fb8c00'/%3E%3C/svg%3E"
+                    style:
+                      left: "50%"
+                      top: "50%"
+                      width: "100%"
+                    tap_action:
+                      action: "none"
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_heating_circuit_1_m2_movement"
+                    state: "closing"
+                elements:
+                  - type: "image"
+                    image: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201000%20500'%3E%3Cpolygon%20points='470,188%20480,200%20490,188'%20fill='%23fb8c00'/%3E%3Cpolygon%20points='470,212%20480,200%20490,212'%20fill='%23fb8c00'/%3E%3C/svg%3E"
+                    style:
+                      left: "50%"
+                      top: "50%"
+                      width: "100%"
+                    tap_action:
+                      action: "none"
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_heating_circuit_2_m3_movement"
+                    state: "opening"
+                elements:
+                  - type: "image"
+                    image: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201000%20500'%3E%3Cpolygon%20points='558,308%20570,318%20558,328'%20fill='%23fb8c00'/%3E%3Cpolygon%20points='582,308%20570,318%20582,328'%20fill='%23fb8c00'/%3E%3C/svg%3E"
+                    style:
+                      left: "50%"
+                      top: "50%"
+                      width: "100%"
+                    tap_action:
+                      action: "none"
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_heating_circuit_2_m3_movement"
+                    state: "closing"
+                elements:
+                  - type: "image"
+                    image: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201000%20500'%3E%3Cpolygon%20points='558,308%20570,318%20558,328'%20fill='%23fb8c00'/%3E%3Cpolygon%20points='582,308%20570,318%20582,328'%20fill='%23fb8c00'/%3E%3C/svg%3E"
+                    style:
+                      left: "50%"
+                      top: "50%"
+                      width: "100%"
+                    tap_action:
+                      action: "none"
+              - type: "state-label"
+                entity: "sensor.ecl_1_sensors_temp_outdoor_s1"
+                style:
+                  left: "9.5%"
+                  top: "4.4%"
+                  font-size: "clamp(11px, 1.55vw, 22px)"
+                  font-weight: "600"
+                  background: "none"
+                  padding: "0 0.3em"
+                  border-radius: "9px"
+                  white-space: "nowrap"
+                  color: "var(--primary-text-color)"
+                  line-height: "1.3"
+                  height: "auto"
+                  min-height: "0"
+                  margin: "0"
+                prefix: "Außen "
+              - type: "state-label"
+                entity: "sensor.ecl_1_meters_meter_1_supply_temperature"
+                style:
+                  left: "10.5%"
+                  top: "57.6%"
+                  font-size: "clamp(11px, 1.55vw, 22px)"
+                  font-weight: "600"
+                  background: "none"
+                  padding: "0 0.3em"
+                  border-radius: "9px"
+                  white-space: "nowrap"
+                  color: "#e53935"
+                  line-height: "1.3"
+                  height: "auto"
+                  min-height: "0"
+                  margin: "0"
+                prefix: "↑ "
+              - type: "state-label"
+                entity: "sensor.ecl_1_meters_meter_1_power"
+                style:
+                  left: "10.5%"
+                  top: "71.6%"
+                  font-size: "clamp(11px, 1.55vw, 22px)"
+                  font-weight: "600"
+                  background: "none"
+                  padding: "0 0.3em"
+                  border-radius: "9px"
+                  white-space: "nowrap"
+                  color: "var(--primary-text-color)"
+                  line-height: "1.3"
+                  height: "auto"
+                  min-height: "0"
+                  margin: "0"
+              - type: "state-label"
+                entity: "sensor.ecl_1_meters_meter_1_flow"
+                style:
+                  left: "10.5%"
+                  top: "76.2%"
+                  font-size: "clamp(11px, 1.55vw, 22px)"
+                  font-weight: "600"
+                  background: "none"
+                  padding: "0 0.3em"
+                  border-radius: "9px"
+                  white-space: "nowrap"
+                  color: "var(--primary-text-color)"
+                  line-height: "1.3"
+                  height: "auto"
+                  min-height: "0"
+                  margin: "0"
+              - type: "state-label"
+                entity: "sensor.ecl_1_meters_meter_1_return_temperature"
+                style:
+                  left: "10.0%"
+                  top: "96.4%"
+                  font-size: "clamp(11px, 1.55vw, 22px)"
+                  font-weight: "600"
+                  background: "none"
+                  padding: "0 0.3em"
+                  border-radius: "9px"
+                  white-space: "nowrap"
+                  color: "#1e88e5"
+                  line-height: "1.3"
+                  height: "auto"
+                  min-height: "0"
+                  margin: "0"
+                prefix: "↓ "
+              - type: "state-label"
+                entity: "sensor.ecl_1_master_circuit_m1_movement"
+                style:
+                  left: "18.5%"
+                  top: "89.4%"
+                  font-size: "clamp(11px, 1.55vw, 22px)"
+                  font-weight: "600"
+                  background: "none"
+                  padding: "0 0.3em"
+                  border-radius: "9px"
+                  white-space: "nowrap"
+                  color: "var(--primary-text-color)"
+                  line-height: "1.3"
+                  height: "auto"
+                  min-height: "0"
+                  margin: "0"
+              - type: "state-label"
+                entity: "sensor.ecl_1_master_circuit_temp_return_s5"
+                style:
+                  left: "18.2%"
+                  top: "79.0%"
+                  font-size: "clamp(11px, 1.55vw, 22px)"
+                  font-weight: "600"
+                  background: "none"
+                  padding: "0 0.3em"
+                  border-radius: "9px"
+                  white-space: "nowrap"
+                  color: "#1e88e5"
+                  line-height: "1.3"
+                  height: "auto"
+                  min-height: "0"
+                  margin: "0"
+                prefix: "S5 "
+              - type: "state-label"
+                entity: "sensor.ecl_1_master_circuit_temp_flow_s3"
+                style:
+                  left: "36.5%"
+                  top: "57.0%"
+                  font-size: "clamp(11px, 1.55vw, 22px)"
+                  font-weight: "600"
+                  background: "none"
+                  padding: "0 0.3em"
+                  border-radius: "9px"
+                  white-space: "nowrap"
+                  color: "#e53935"
+                  line-height: "1.3"
+                  height: "auto"
+                  min-height: "0"
+                  margin: "0"
+                prefix: "S3 "
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_master_circuit_mode_pump_p1"
+                    state: "1"
+                elements:
+                  - type: "icon"
+                    icon: "mdi:pump"
+                    style:
+                      left: "43.0%"
+                      top: "63.6%"
+                      color: "#43a047"
+                      --mdc-icon-size: "clamp(12px, 2vw, 26px)"
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_master_circuit_mode_pump_p1"
+                    state_not: "1"
+                elements:
+                  - type: "icon"
+                    icon: "mdi:pump-off"
+                    style:
+                      left: "43.0%"
+                      top: "63.6%"
+                      color: "#9e9e9e"
+                      --mdc-icon-size: "clamp(12px, 2vw, 26px)"
+              - type: "state-label"
+                entity: "sensor.ecl_1_heating_circuit_1_m2_movement"
+                style:
+                  left: "40.5%"
+                  top: "46.4%"
+                  font-size: "clamp(11px, 1.55vw, 22px)"
+                  font-weight: "600"
+                  background: "none"
+                  padding: "0 0.3em"
+                  border-radius: "9px"
+                  white-space: "nowrap"
+                  color: "var(--primary-text-color)"
+                  line-height: "1.3"
+                  height: "auto"
+                  min-height: "0"
+                  margin: "0"
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_heating_circuit_1_mode_pump_p2"
+                    state: "1"
+                elements:
+                  - type: "icon"
+                    icon: "mdi:pump"
+                    style:
+                      left: "60.0%"
+                      top: "26.0%"
+                      color: "#43a047"
+                      --mdc-icon-size: "clamp(12px, 2vw, 26px)"
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_heating_circuit_1_mode_pump_p2"
+                    state_not: "1"
+                elements:
+                  - type: "icon"
+                    icon: "mdi:pump-off"
+                    style:
+                      left: "60.0%"
+                      top: "26.0%"
+                      color: "#9e9e9e"
+                      --mdc-icon-size: "clamp(12px, 2vw, 26px)"
+              - type: "conditional"
+                conditions:
+                  - condition: "numeric_state"
+                    entity: "sensor.ecl310_hk1_abweichung_vorlauf"
+                    above: -5.05
+                    below: 5.05
+                elements:
+                  - type: "state-label"
+                    entity: "sensor.ecl_1_heating_circuit_1_temp_flow_s4"
+                    style:
+                      left: "70.0%"
+                      top: "20.0%"
+                      font-size: "clamp(11px, 1.55vw, 22px)"
+                      font-weight: "600"
+                      background: "none"
+                      padding: "0 0.3em"
+                      border-radius: "9px"
+                      white-space: "nowrap"
+                      color: "var(--primary-text-color)"
+                      line-height: "1.3"
+                      height: "auto"
+                      min-height: "0"
+                      margin: "0"
+                    prefix: "Ist "
+              - type: "conditional"
+                conditions:
+                  - condition: "numeric_state"
+                    entity: "sensor.ecl310_hk1_abweichung_vorlauf"
+                    above: 5
+                elements:
+                  - type: "state-label"
+                    entity: "sensor.ecl_1_heating_circuit_1_temp_flow_s4"
+                    style:
+                      left: "70.0%"
+                      top: "20.0%"
+                      font-size: "clamp(11px, 1.55vw, 22px)"
+                      font-weight: "600"
+                      background: "none"
+                      padding: "0 0.3em"
+                      border-radius: "9px"
+                      white-space: "nowrap"
+                      color: "#fb8c00"
+                      line-height: "1.3"
+                      height: "auto"
+                      min-height: "0"
+                      margin: "0"
+                    prefix: "Ist "
+              - type: "conditional"
+                conditions:
+                  - condition: "numeric_state"
+                    entity: "sensor.ecl310_hk1_abweichung_vorlauf"
+                    below: -5
+                elements:
+                  - type: "state-label"
+                    entity: "sensor.ecl_1_heating_circuit_1_temp_flow_s4"
+                    style:
+                      left: "70.0%"
+                      top: "20.0%"
+                      font-size: "clamp(11px, 1.55vw, 22px)"
+                      font-weight: "600"
+                      background: "none"
+                      padding: "0 0.3em"
+                      border-radius: "9px"
+                      white-space: "nowrap"
+                      color: "#fb8c00"
+                      line-height: "1.3"
+                      height: "auto"
+                      min-height: "0"
+                      margin: "0"
+                    prefix: "Ist "
+              - type: "state-label"
+                entity: "sensor.ecl_1_heating_circuit_1_temp_flow_target"
+                style:
+                  left: "70.0%"
+                  top: "30.6%"
+                  font-size: "clamp(11px, 1.55vw, 22px)"
+                  font-weight: "600"
+                  background: "none"
+                  padding: "0 0.3em"
+                  border-radius: "9px"
+                  white-space: "nowrap"
+                  color: "#1e88e5"
+                  line-height: "1.3"
+                  height: "auto"
+                  min-height: "0"
+                  margin: "0"
+                prefix: "Soll "
+              - type: "state-label"
+                entity: "sensor.ecl_1_heating_circuit_2_m3_movement"
+                style:
+                  left: "62.5%"
+                  top: "76.0%"
+                  font-size: "clamp(11px, 1.55vw, 22px)"
+                  font-weight: "600"
+                  background: "none"
+                  padding: "0 0.3em"
+                  border-radius: "9px"
+                  white-space: "nowrap"
+                  color: "var(--primary-text-color)"
+                  line-height: "1.3"
+                  height: "auto"
+                  min-height: "0"
+                  margin: "0"
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_heating_circuit_2_mode_pump_p3"
+                    state: "1"
+                elements:
+                  - type: "icon"
+                    icon: "mdi:pump"
+                    style:
+                      left: "74.0%"
+                      top: "63.6%"
+                      color: "#43a047"
+                      --mdc-icon-size: "clamp(12px, 2vw, 26px)"
+              - type: "conditional"
+                conditions:
+                  - entity: "sensor.ecl_1_heating_circuit_2_mode_pump_p3"
+                    state_not: "1"
+                elements:
+                  - type: "icon"
+                    icon: "mdi:pump-off"
+                    style:
+                      left: "74.0%"
+                      top: "63.6%"
+                      color: "#9e9e9e"
+                      --mdc-icon-size: "clamp(12px, 2vw, 26px)"
+              - type: "conditional"
+                conditions:
+                  - condition: "numeric_state"
+                    entity: "sensor.ecl310_hk2_abweichung_vorlauf"
+                    above: -5.05
+                    below: 5.05
+                elements:
+                  - type: "state-label"
+                    entity: "sensor.ecl_1_heating_circuit_2_temp_flow_s9"
+                    style:
+                      left: "66.0%"
+                      top: "57.0%"
+                      font-size: "clamp(11px, 1.55vw, 22px)"
+                      font-weight: "600"
+                      background: "none"
+                      padding: "0 0.3em"
+                      border-radius: "9px"
+                      white-space: "nowrap"
+                      color: "var(--primary-text-color)"
+                      line-height: "1.3"
+                      height: "auto"
+                      min-height: "0"
+                      margin: "0"
+                    prefix: "Ist "
+              - type: "conditional"
+                conditions:
+                  - condition: "numeric_state"
+                    entity: "sensor.ecl310_hk2_abweichung_vorlauf"
+                    above: 5
+                elements:
+                  - type: "state-label"
+                    entity: "sensor.ecl_1_heating_circuit_2_temp_flow_s9"
+                    style:
+                      left: "66.0%"
+                      top: "57.0%"
+                      font-size: "clamp(11px, 1.55vw, 22px)"
+                      font-weight: "600"
+                      background: "none"
+                      padding: "0 0.3em"
+                      border-radius: "9px"
+                      white-space: "nowrap"
+                      color: "#fb8c00"
+                      line-height: "1.3"
+                      height: "auto"
+                      min-height: "0"
+                      margin: "0"
+                    prefix: "Ist "
+              - type: "conditional"
+                conditions:
+                  - condition: "numeric_state"
+                    entity: "sensor.ecl310_hk2_abweichung_vorlauf"
+                    below: -5
+                elements:
+                  - type: "state-label"
+                    entity: "sensor.ecl_1_heating_circuit_2_temp_flow_s9"
+                    style:
+                      left: "66.0%"
+                      top: "57.0%"
+                      font-size: "clamp(11px, 1.55vw, 22px)"
+                      font-weight: "600"
+                      background: "none"
+                      padding: "0 0.3em"
+                      border-radius: "9px"
+                      white-space: "nowrap"
+                      color: "#fb8c00"
+                      line-height: "1.3"
+                      height: "auto"
+                      min-height: "0"
+                      margin: "0"
+                    prefix: "Ist "
+              - type: "state-label"
+                entity: "sensor.ecl_1_heating_circuit_2_temp_flow_target"
+                style:
+                  left: "66.0%"
+                  top: "69.6%"
+                  font-size: "clamp(11px, 1.55vw, 22px)"
+                  font-weight: "600"
+                  background: "none"
+                  padding: "0 0.3em"
+                  border-radius: "9px"
+                  white-space: "nowrap"
+                  color: "#1e88e5"
+                  line-height: "1.3"
+                  height: "auto"
+                  min-height: "0"
+                  margin: "0"
+                prefix: "Soll "
+              - type: "state-label"
+                entity: "sensor.ecl_1_meters_meter_2_power"
+                style:
+                  left: "85.5%"
+                  top: "94.6%"
+                  font-size: "clamp(11px, 1.55vw, 22px)"
+                  font-weight: "600"
+                  background: "none"
+                  padding: "0 0.3em"
+                  border-radius: "9px"
+                  white-space: "nowrap"
+                  color: "var(--primary-text-color)"
+                  line-height: "1.3"
+                  height: "auto"
+                  min-height: "0"
+                  margin: "0"
+              - type: "state-label"
+                entity: "sensor.ecl_1_meters_meter_2_flow"
+                style:
+                  left: "93.0%"
+                  top: "94.6%"
+                  font-size: "clamp(11px, 1.55vw, 22px)"
+                  font-weight: "600"
+                  background: "none"
+                  padding: "0 0.3em"
+                  border-radius: "9px"
+                  white-space: "nowrap"
+                  color: "var(--primary-text-color)"
+                  line-height: "1.3"
+                  height: "auto"
+                  min-height: "0"
+                  margin: "0"
+              - type: "state-label"
+                entity: "sensor.ecl_1_heating_circuit_1_mode_operating_mode"
+                style:
+                  left: "86.0%"
+                  top: "31.6%"
+                  font-weight: "600"
+                  background: "none"
+                  padding: "0 0.3em"
+                  white-space: "nowrap"
+                  line-height: "1.3"
+                  height: "auto"
+                  min-height: "0"
+                  margin: "0"
+                  font-size: "clamp(10px, 1.2vw, 17px)"
+                  color: "var(--secondary-text-color)"
+              - type: "state-label"
+                entity: "sensor.ecl_1_heating_circuit_2_mode_operating_mode"
+                style:
+                  left: "86.0%"
+                  top: "69.4%"
+                  font-weight: "600"
+                  background: "none"
+                  padding: "0 0.3em"
+                  white-space: "nowrap"
+                  line-height: "1.3"
+                  height: "auto"
+                  min-height: "0"
+                  margin: "0"
+                  font-size: "clamp(10px, 1.2vw, 17px)"
+                  color: "var(--secondary-text-color)"
+            grid_options:
+              columns: "full"

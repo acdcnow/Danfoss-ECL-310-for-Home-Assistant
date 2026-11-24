@@ -38,6 +38,16 @@
     }
   },
   "entity": {
+    "select": {
+      "operating_mode": {
+        "state": {
+          "schedule": "Programme",
+          "comfort": "Confort",
+          "setback": "Réduit",
+          "frost_protection": "Hors gel"
+        }
+      }
+    },
     "sensor": {
       "operating_mode": {
         "state": {

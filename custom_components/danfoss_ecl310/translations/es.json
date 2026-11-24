@@ -38,6 +38,16 @@
     }
   },
   "entity": {
+    "select": {
+      "operating_mode": {
+        "state": {
+          "schedule": "Programa",
+          "comfort": "Confort",
+          "setback": "Reducido",
+          "frost_protection": "Protección contra heladas"
+        }
+      }
+    },
     "sensor": {
       "operating_mode": {
         "state": {

@@ -23,6 +23,7 @@ Two views in one file, switched with a helper:
 | `preview/index.html` | offline preview of the dashboard - open it in a browser, no Home Assistant needed |
 | `preview/fetch_icons.py` | regenerates `preview/icons.js` (Material Design Icons used by the preview) |
 | `examples/legacy-vertical-stack-example.yaml` | the previous minimal example, kept for reference |
+| `p330-7/` | separate dashboard for **application P330.7** (two heating circuits, heating-curve graphs, hydraulic diagram) - see [p330-7/README.md](p330-7/README.md) |
 
 ## Requirements
 

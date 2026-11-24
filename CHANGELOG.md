@@ -6,8 +6,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-11-24
+
 ### Added
 
+- **Dashboard for the P330.7 application** in `dashboards/p330-7/`. Two views: **ECL 310** (master circuit, heating circuits 1 and 2 with history, the two M-Bus meters; with the expert switch also the heating curves as graphs clipped to the minimum and maximum flow temperature, all curve points, limits, influences, manual modes and the system information) and **Hydraulik** (live hydraulic diagram with pipes coloured by pump state, valve arrows and an orange actual flow when it is more than 5 K off target). It uses built-in Home Assistant cards plus the Plotly Graph Card (HACS). `ecl310-p330-7-helpers.yaml` provides `input_boolean.expert_mode` and two template sensors (actual minus target flow). The integration code is unchanged.
+
+## [1.3.1] - 2026-11-16
+
+### Fixed
+
+- **P330.7 temperatures had no long-term statistics.** The measured temperatures (outdoor S1, flow S3/S4/S9, return S5/S6/S7, the ECA and room sensors, the accumulated outdoor temperature, the flow targets and the two meters' supply and return temperatures) now carry `state_class: measurement`, so Home Assistant keeps their mean, minimum and maximum over time instead of only the short recorder history. The read-back settings (limits, set values, curves) are not measurements and stay without. `A247.1` is unchanged.
+
+## [1.3.0] - 2026-11-16
+
+### Added
+
+- **Writable operating mode on P330.7.** A new `select` platform adds `Mode: Operating Mode (Select)` to heating circuits 1 and 2 with the options Schedule, Comfort, Setback and Frost protection (codes 1...4, Danfoss communication description section 6.4). It writes the holding register at the address the mode sensor reads (4200 / 4201) and shows the new choice at once; a code the selector does not offer, such as manual operation, reads as unknown. A profile lists its selects in the new `Application.selects`; `A247.1` has none, so it keeps exactly its entities.
 - **Selectable application.** The setup form has a new **Application** field. The register map is
   now a profile in the new `applications.py`; sensors, numbers and valve movement sensors are created
   from the profile of the entry. `A247.1` is the default and keeps the existing register map unchanged.
@@ -34,6 +49,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Config entries without an `application` value are treated as A247.1, so existing installs need no
   migration and keep their entity ids.
 - Reconfigure keeps the entry's application and refuses a controller that runs a different one.
+
+### Fixed
+
+- **Integration icon showed a clipped "D".** The icon was a cropped, off-centre fragment of the Danfoss logo; it is now the complete "D", centred on a transparent square with a small margin (256x256 and 512x512). `logo.png` and `dark_logo.png` are unchanged.
 
 ## [1.2.4] - 2026-11-07
 
