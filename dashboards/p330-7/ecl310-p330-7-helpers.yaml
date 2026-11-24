@@ -1,0 +1,55 @@
+# =============================================================================
+#  Danfoss ECL 310 - application P330.7: helpers for ecl310-p330-7-dashboard.yaml
+# -----------------------------------------------------------------------------
+#  1) input_boolean.expert_mode - the Standard/Expert switch of the dashboard
+#     (badge "Experte" in the first section).
+#     !! If you already installed dashboards/ecl310-helpers.yaml for the
+#     !! A247.1 dashboard, that package defines the same helper: delete the
+#     !! "input_boolean:" block below, the two dashboards then share one switch.
+#  2) Two template sensors: actual minus target flow temperature of each heating
+#     circuit. The Hydraulik view uses them to colour the "Ist" value orange
+#     when the flow is more than 5 K away from the target.
+#
+#  Install
+#  -------
+#  1) copy this file to   <config>/packages/ecl310_p330_7.yaml
+#     (packages enabled once in configuration.yaml:
+#          homeassistant:
+#            packages: !include_dir_named packages )
+#  2) Developer Tools -> YAML -> check configuration -> reload template entities
+#
+#  Alternative without YAML: Settings -> Devices & services -> Helpers ->
+#  Create helper -> Template -> Sensor, name "ECL310 HK1 Abweichung Vorlauf" and
+#  the state template below (unit C, device class temperature), then the same
+#  for heating circuit 2. The entity ids must stay
+#      sensor.ecl310_hk1_abweichung_vorlauf / sensor.ecl310_hk2_abweichung_vorlauf
+#
+#  The entity ids below assume the device name "ECL 1" (sensor.ecl_1_...).
+# =============================================================================
+
+input_boolean:
+  expert_mode:
+    name: Heizung Expertenmodus
+    icon: mdi:account-hard-hat
+
+template:
+  - sensor:
+      - name: "ECL310 HK1 Abweichung Vorlauf"
+        unique_id: ecl310_hk1_abweichung_vorlauf
+        device_class: temperature
+        unit_of_measurement: "°C"
+        state_class: measurement
+        state: >-
+          {% set ist = states('sensor.ecl_1_heating_circuit_1_temp_flow_s4') | float(none) %}
+          {% set soll = states('sensor.ecl_1_heating_circuit_1_temp_flow_target') | float(none) %}
+          {{ (ist - soll) | round(1) if ist is not none and soll is not none else none }}
+
+      - name: "ECL310 HK2 Abweichung Vorlauf"
+        unique_id: ecl310_hk2_abweichung_vorlauf
+        device_class: temperature
+        unit_of_measurement: "°C"
+        state_class: measurement
+        state: >-
+          {% set ist = states('sensor.ecl_1_heating_circuit_2_temp_flow_s9') | float(none) %}
+          {% set soll = states('sensor.ecl_1_heating_circuit_2_temp_flow_target') | float(none) %}
+          {{ (ist - soll) | round(1) if ist is not none and soll is not none else none }}

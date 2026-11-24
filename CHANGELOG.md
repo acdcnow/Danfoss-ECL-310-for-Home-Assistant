@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-11-24
+
+### Added
+
+- **Dashboard for the P330.7 application** in `dashboards/p330-7/`. Two views: **ECL 310** (master circuit, heating circuits 1 and 2 with history, the two M-Bus meters; with the expert switch also the heating curves as graphs clipped to the minimum and maximum flow temperature, all curve points, limits, influences, manual modes and the system information) and **Hydraulik** (live hydraulic diagram with pipes coloured by pump state, valve arrows and an orange actual flow when it is more than 5 K off target). It uses built-in Home Assistant cards plus the Plotly Graph Card (HACS). `ecl310-p330-7-helpers.yaml` provides `input_boolean.expert_mode` and two template sensors (actual minus target flow). The integration code is unchanged.
+
 ## [1.3.1] - 2026-11-16
 
 ### Fixed
